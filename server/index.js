@@ -40,7 +40,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 
 // Error Handling Middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('Unhandled Server Error:', err);
   res.status(500).json({
     error: 'Internal server error in the archives.',

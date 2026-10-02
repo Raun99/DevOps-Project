@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { query, fallbackStore } from './index.js';
+import { query } from './index.js';
 
 export async function seedDatabase() {
   console.log('🌱 [CLANDESTINE Seed] Seeding demonstration database...');

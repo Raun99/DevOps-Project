@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ClandestineProvider } from './context/ClandestineContext';
 import Full3DCastleEngine from './components/world/Full3DCastleEngine';
@@ -6,6 +5,9 @@ import CleanBloggingHeader from './components/shell/CleanBloggingHeader';
 import BookPageFlipModal from './components/world/BookPageFlipModal';
 import AstrolabeSearchModal from './components/shell/AstrolabeSearchModal';
 import CursorTrailCanvas from './components/common/CursorTrailCanvas';
+import WritingDeskModal from './components/desk/WritingDeskModal';
+import AuthModal from './components/shell/AuthModal';
+import AuthorProfileModal from './components/shell/AuthorProfileModal';
 
 function Clandestine3DWorld() {
   return (
@@ -24,6 +26,15 @@ function Clandestine3DWorld() {
 
       {/* 5. CELESTIAL ASTROLABE SEARCH MODAL */}
       <AstrolabeSearchModal />
+
+      {/* 6. SCRIBE'S WRITING DESK (Create / Edit Article Modal) */}
+      <WritingDeskModal />
+
+      {/* 7. SCHOLAR REGISTRY & AUTHENTICATION MODAL */}
+      <AuthModal />
+
+      {/* 8. AUTHOR ARCHIVE & PROFILE MODAL */}
+      <AuthorProfileModal />
     </div>
   );
 }

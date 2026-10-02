@@ -71,6 +71,13 @@ export function validateCommentContent(content) {
 
   const trimmed = content.trim();
 
+  if (trimmed.length === 0) {
+    return {
+      allowed: false,
+      reason: 'Comment text cannot be empty.'
+    };
+  }
+
   if (trimmed.length < 2) {
     return {
       allowed: false,

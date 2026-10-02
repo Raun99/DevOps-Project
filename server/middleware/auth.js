@@ -47,7 +47,7 @@ export function optionalAuth(req, res, next) {
   if (parts.length === 2 && parts[0] === 'Bearer') {
     try {
       req.user = jwt.verify(parts[1], JWT_SECRET);
-    } catch (e) {
+    } catch {
       req.user = null;
     }
   } else {

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import { CASTLE_ROOMS } from './CastleRoomsData';
+import { CASTLE_ROOMS, buildDynamicCastleRooms } from './CastleRoomsData';
 import { useClandestine } from '../../context/ClandestineContext';
 import { soundEngine } from '../../audio/AudioSynthesizer';
 import { 
@@ -34,8 +34,13 @@ export default function Full3DCastleEngine() {
     toggleAmbientMode, 
     selectPostById,
     posts,
+    categories,
     activeCategory 
   } = useClandestine();
+
+  const activeCastleRooms = React.useMemo(() => {
+    return buildDynamicCastleRooms(categories, posts);
+  }, [categories, posts]);
 
   // Player position in 3D world space (Eye height = 1.7, in front of Observatory Lectern)
   const playerPos = useRef(new THREE.Vector3(0, 1.7, -0.8));
@@ -51,7 +56,7 @@ export default function Full3DCastleEngine() {
   const lastFootstepTime = useRef(0);
 
   // Active room and nearby interactive book
-  const [currentRoom, setCurrentRoom] = useState(CASTLE_ROOMS[0]);
+  const [currentRoom, setCurrentRoom] = useState(() => activeCastleRooms[0]);
   const [nearbyBook, setNearbyBook] = useState(null);
   const [roomBanner, setRoomBanner] = useState(null);
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(false);
@@ -82,14 +87,15 @@ export default function Full3DCastleEngine() {
     if (prevCategoryRef.current === activeCategory) return;
     prevCategoryRef.current = activeCategory;
 
-    const targetRoom = CASTLE_ROOMS.find(r => 
-      r.category.toLowerCase() === activeCategory.toLowerCase()
-    ) || (activeCategory === 'all' ? CASTLE_ROOMS[0] : null);
+    const targetRoom = activeCastleRooms.find(r => 
+      (r.category && r.category.toLowerCase() === activeCategory.toLowerCase()) ||
+      r.categoryId === activeCategory
+    ) || (activeCategory === 'all' ? activeCastleRooms[0] : null);
 
     if (targetRoom) {
       teleportToRoom(targetRoom);
     }
-  }, [activeCategory, teleportToRoom]);
+  }, [activeCategory, activeCastleRooms, teleportToRoom]);
 
   // Pointer Lock Toggle
   const togglePointerLock = useCallback(() => {
@@ -257,8 +263,8 @@ export default function Full3DCastleEngine() {
     lightsRef.current.torchLights = [];
     torchFlamesRef.current = [];
 
-    // 7. Construct 16-Room 3D Castle Architecture
-    CASTLE_ROOMS.forEach((room) => {
+    // 7. Construct 3D Castle Architecture (Including Dynamic Category Wings)
+    activeCastleRooms.forEach((room) => {
       // Room Floor
       const floorGeo = new THREE.PlaneGeometry(room.width, room.depth);
       const roomFloorMat = stoneFloorMat.clone();
@@ -439,6 +445,8 @@ export default function Full3DCastleEngine() {
       lecternMeshes.current.push({
         roomId: room.id,
         roomName: room.name,
+        roomCategory: room.category,
+        roomCategoryId: room.categoryId,
         articleId: room.articleId,
         pedestalPos: new THREE.Vector3(px, 1.7, pz),
         orbMesh: orbMesh,
@@ -725,9 +733,9 @@ export default function Full3DCastleEngine() {
       camera.position.copy(playerPos.current);
 
       // Check current room by proximity
-      let foundRoom = CASTLE_ROOMS[0];
+      let foundRoom = activeCastleRooms[0];
       let shortestRoomDist = Infinity;
-      CASTLE_ROOMS.forEach((r) => {
+      activeCastleRooms.forEach((r) => {
         const dist = Math.sqrt((playerPos.current.x - r.x) ** 2 + (playerPos.current.z - r.z) ** 2);
         if (dist < shortestRoomDist) {
           shortestRoomDist = dist;
@@ -735,7 +743,7 @@ export default function Full3DCastleEngine() {
         }
       });
 
-      if (foundRoom.id !== currentRoom?.id) {
+      if (foundRoom && foundRoom.id !== currentRoom?.id) {
         setCurrentRoom(foundRoom);
         setRoomBanner(`${foundRoom.name.toUpperCase()}`);
         setTimeout(() => setRoomBanner(null), 3200);
@@ -746,12 +754,22 @@ export default function Full3DCastleEngine() {
       for (const item of lecternMeshes.current) {
         const dist = playerPos.current.distanceTo(item.pedestalPos);
         if (dist < 3.4) {
-          const matchedPost = posts.find(p => p.id === item.articleId) || posts[0];
-          closeBook = {
-            ...item,
-            title: matchedPost.title,
-            category: matchedPost.category
-          };
+          const matchedPost = (posts && posts.length > 0)
+            ? (posts.find(p => 
+                p.id === item.articleId || 
+                (p.categoryId && p.categoryId === item.roomCategoryId) || 
+                (p.category && item.roomCategory && p.category.toLowerCase() === item.roomCategory.toLowerCase())
+              ) || posts[0])
+            : null;
+
+          if (matchedPost) {
+            closeBook = {
+              ...item,
+              articleId: matchedPost.id,
+              title: matchedPost.title,
+              category: matchedPost.category
+            };
+          }
           break;
         }
       }
@@ -911,9 +929,9 @@ export default function Full3DCastleEngine() {
               Click any room to fast-travel your first-person perspective immediately:
             </p>
 
-            {/* 16 Rooms Grid */}
+            {/* Dynamic Rooms Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-[55vh] overflow-y-auto pr-1 folio-scroll">
-              {CASTLE_ROOMS.map((room) => {
+              {activeCastleRooms.map((room) => {
                 const isCurrent = currentRoom?.id === room.id;
                 return (
                   <button
@@ -950,7 +968,7 @@ export default function Full3DCastleEngine() {
               <span>Press <strong>[M]</strong> anytime to toggle castle map</span>
               <button 
                 onClick={() => {
-                  teleportToRoom(CASTLE_ROOMS[0]);
+                  teleportToRoom(activeCastleRooms[0]);
                   setIsMiniMapOpen(false);
                 }}
                 className="text-antiqueGold hover:text-brightGold underline cursor-pointer"

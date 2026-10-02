@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   BookOpen, 
@@ -8,13 +7,13 @@ import {
   Flame, 
   Volume2, 
   VolumeX, 
-  Compass, 
   ChevronDown, 
-  LayoutDashboard,
-  Sparkles
+  Feather,
+  LogOut,
+  Sparkles,
+  Shield
 } from 'lucide-react';
 import { useClandestine } from '../../context/ClandestineContext';
-import { CATEGORIES } from '../../data/initialPosts';
 import ClandestineSigil from '../common/ClandestineSigil';
 
 export default function CleanBloggingHeader() {
@@ -27,18 +26,24 @@ export default function CleanBloggingHeader() {
     toggleAmbientMode, 
     isAudioActive, 
     toggleAudio,
-    bookmarkedIds
+    bookmarkedIds,
+    categories,
+    currentUser,
+    openAuthModal,
+    openWritingDesk,
+    openProfileModal,
+    logout
   } = useClandestine();
 
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // If in reading mode, keep header super minimal
+  // If in reading mode, keep header hidden so the open book has maximum immersion
   if (cameraMode === 'reading') return null;
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 px-6 sm:px-10 py-3.5 flex items-center justify-between pointer-events-none select-none">
+      <header className="fixed top-0 left-0 right-0 z-40 px-4 sm:px-8 py-3.5 flex items-center justify-between pointer-events-none select-none">
         
         {/* Brand Logo & Tagline */}
         <div 
@@ -56,10 +61,10 @@ export default function CleanBloggingHeader() {
           </div>
         </div>
 
-        {/* Center: Clean Modern Blogging Navigation Tabs */}
-        <nav className="hidden md:flex pointer-events-auto items-center space-x-1.5 bg-black/75 px-4 py-2 rounded-full border border-brightGold/30 shadow-2xl backdrop-blur-md">
+        {/* Center: Modern Blogging Navigation Bar */}
+        <nav className="hidden md:flex pointer-events-auto items-center space-x-1.5 bg-black/80 px-4 py-1.5 rounded-full border border-brightGold/30 shadow-2xl backdrop-blur-md">
           
-          {/* Feed / Articles Tab */}
+          {/* Articles Tab */}
           <button
             onClick={() => travelTo('chamber')}
             className={`px-3 py-1.5 rounded-full text-xs font-cinzel tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -72,7 +77,7 @@ export default function CleanBloggingHeader() {
             <span>Articles</span>
           </button>
 
-          {/* Categories Dropdown Tab */}
+          {/* Dynamic Categories Dropdown Tab */}
           <div className="relative">
             <button
               onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
@@ -86,29 +91,46 @@ export default function CleanBloggingHeader() {
               <ChevronDown className={`w-3 h-3 transition-transform ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Categories Menu Drawer */}
+            {/* Categories Drawer */}
             {isCategoryMenuOpen && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 p-2 rounded-2xl bg-black/95 border border-brightGold/50 shadow-2xl backdrop-blur-xl z-50">
-                <div className="text-[10px] font-mono text-slate-400 px-3 py-1 border-b border-white/10 uppercase">
-                  Select Category
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-2 rounded-2xl bg-black/95 border border-brightGold/50 shadow-2xl backdrop-blur-xl z-50">
+                <div className="text-[10px] font-mono text-slate-400 px-3 py-1 border-b border-white/10 uppercase flex justify-between">
+                  <span>Castle Wings</span>
+                  <span className="text-brightGold cursor-pointer" onClick={() => { setIsCategoryMenuOpen(false); openWritingDesk(); }}>+ New Wing</span>
                 </div>
-                {CATEGORIES.map((cat) => (
+                
+                <button
+                  onClick={() => {
+                    selectCategory('all');
+                    setIsCategoryMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-cinzel flex items-center justify-between transition-colors cursor-pointer ${
+                    activeCategory === 'all'
+                      ? 'text-brightGold font-bold bg-white/10'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span>All Castle Wings</span>
+                  {activeCategory === 'all' && <span className="w-1.5 h-1.5 rounded-full bg-brightGold" />}
+                </button>
+
+                {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => {
-                      selectCategory(cat.id);
+                      selectCategory(cat.name);
                       setIsCategoryMenuOpen(false);
                     }}
                     className={`w-full text-left px-3 py-2 rounded-xl text-xs font-cinzel flex items-center justify-between transition-colors cursor-pointer ${
-                      activeCategory.toLowerCase() === cat.id.toLowerCase()
+                      activeCategory.toLowerCase() === cat.name.toLowerCase()
                         ? 'text-brightGold font-bold bg-white/10'
                         : 'text-slate-300 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <span>{cat.label}</span>
-                    {activeCategory.toLowerCase() === cat.id.toLowerCase() && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-brightGold" />
-                    )}
+                    <span>{cat.name}</span>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {cat.postCount || 0}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -142,24 +164,96 @@ export default function CleanBloggingHeader() {
             <span>Search</span>
           </button>
 
-          {/* User Profile / Dashboard Tab */}
+          {/* Scribe's Writing Desk (Create Post) */}
           <button
-            onClick={() => setIsProfileModalOpen(true)}
-            className="px-3 py-1.5 rounded-full text-xs font-cinzel tracking-wider flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+            onClick={() => openWritingDesk()}
+            className="px-3 py-1.5 rounded-full text-xs font-cinzel tracking-wider flex items-center gap-1.5 bg-gradient-to-r from-red-900/80 to-amber-700/80 hover:from-red-800 hover:to-amber-600 text-amber-100 font-bold border border-brightGold/40 transition-all cursor-pointer shadow"
           >
-            <User className="w-3.5 h-3.5" />
-            <span>Profile</span>
+            <Feather className="w-3.5 h-3.5 text-brightGold" />
+            <span>Write</span>
           </button>
 
         </nav>
 
-        {/* Right: Lighting Toggle & Audio Synthesizer */}
+        {/* Right: User Authentication / Profile, Lighting & Audio */}
         <div className="pointer-events-auto flex items-center space-x-2.5">
+          
+          {/* User Profile / Auth Button */}
+          {currentUser ? (
+            <div className="relative">
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center space-x-2 px-3 py-1 rounded-full bg-black/70 hover:bg-black/90 border border-brightGold/50 transition-all cursor-pointer shadow-md"
+              >
+                <div className="w-6 h-6 rounded-full bg-amber-900 border border-brightGold flex items-center justify-center text-[10px] font-bold font-cinzel text-amber-200">
+                  {currentUser.avatar || 'SC'}
+                </div>
+                <span className="hidden sm:inline text-xs font-cinzel font-bold text-slate-200 max-w-[100px] truncate">
+                  {currentUser.username}
+                </span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+
+              {/* User Dropdown */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 p-2 rounded-2xl bg-black/95 border border-brightGold/50 shadow-2xl backdrop-blur-xl z-50 text-xs font-cinzel">
+                  <div className="px-3 py-2 border-b border-white/10 text-slate-400 font-mono text-[10px]">
+                    SIGNED IN AS
+                    <div className="font-bold text-white font-cinzel text-xs truncate">{currentUser.username}</div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      openProfileModal(currentUser);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/10 text-slate-200 flex items-center gap-2 cursor-pointer"
+                  >
+                    <User className="w-3.5 h-3.5 text-brightGold" />
+                    <span>My Profile</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      openWritingDesk();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/10 text-slate-200 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Feather className="w-3.5 h-3.5 text-brightGold" />
+                    <span>Create Post</span>
+                  </button>
+
+                  <div className="my-1 border-t border-white/10" />
+
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-950/40 text-red-400 flex items-center gap-2 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={openAuthModal}
+              className="px-3.5 py-1.5 rounded-full bg-brightGold/15 hover:bg-brightGold/25 text-brightGold border border-brightGold/50 font-cinzel text-xs font-bold transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
+
           {/* Candle Lighting Toggle */}
           <button
             onClick={toggleAmbientMode}
             className="p-2 rounded-full bg-black/60 hover:bg-black/85 border border-amber-500/40 hover:border-amber-400 text-amber-300 transition-all cursor-pointer shadow-md"
-            title={ambientMode === 'warm' ? "Light: Radiant Golden Glow (Click to switch to Dim Twilight)" : "Light: Dim Twilight (Click to switch to Radiant Glow)"}
+            title={ambientMode === 'warm' ? "Switch to Dim Twilight" : "Switch to Radiant Golden Glow"}
           >
             <Flame className={`w-4 h-4 ${ambientMode === 'warm' ? 'text-amber-400 animate-pulse' : 'text-slate-500'}`} />
           </button>
@@ -176,62 +270,10 @@ export default function CleanBloggingHeader() {
               <VolumeX className="w-4 h-4 text-slate-500" />
             )}
           </button>
+
         </div>
 
       </header>
-
-      {/* User Profile / Dashboard Modal */}
-      {isProfileModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fade-in select-none">
-          <div 
-            onClick={() => setIsProfileModalOpen(false)}
-            className="fixed inset-0 cursor-pointer pointer-events-auto"
-          />
-          <div className="relative w-full max-w-md p-6 rounded-3xl bg-black/90 border border-brightGold/50 shadow-2xl z-10 pointer-events-auto text-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-full bg-amber-900/60 border-2 border-brightGold flex items-center justify-center text-lg font-bold font-cinzel text-amber-200">
-                  AR
-                </div>
-                <div>
-                  <h3 className="text-base font-bold font-cinzel text-white">Sage Aris Thorne</h3>
-                  <p className="text-xs font-mono text-slate-400">Chief Writer & Observatory Scholar</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsProfileModalOpen(false)}
-                className="text-slate-400 hover:text-white text-xs font-mono p-1 rounded"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="my-5 space-y-3">
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs font-mono">
-                <span>Published Articles</span>
-                <span className="font-bold text-brightGold">12</span>
-              </div>
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs font-mono">
-                <span>Saved Bookmarks</span>
-                <span className="font-bold text-brightGold">{bookmarkedIds.length}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs font-mono">
-                <span>Reader Resonance (Likes)</span>
-                <span className="font-bold text-brightGold">4,820</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-white/10 text-center">
-              <button 
-                onClick={() => setIsProfileModalOpen(false)}
-                className="w-full py-2.5 rounded-xl bg-brightGold/20 hover:bg-brightGold/30 text-brightGold border border-brightGold/60 font-cinzel text-xs font-bold transition-all cursor-pointer"
-              >
-                Return to Castle
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

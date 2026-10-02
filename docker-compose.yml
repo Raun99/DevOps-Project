@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: clandestine_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: clandestine
+      POSTGRES_PASSWORD: secret_arcane_pass
+      POSTGRES_DB: clandestine_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clandestine -d clandestine_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clandestine_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgres://clandestine:secret_arcane_pass@db:5432/clandestine_db
+      JWT_SECRET: clandestine-production-jwt-super-secret-key-3.0
+      FRONTEND_URL: http://localhost:5000
+      CANARY_COMMENT_PERCENT: 15
+
+volumes:
+  postgres_data:
