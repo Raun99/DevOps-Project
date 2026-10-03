@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
-import { CASTLE_ROOMS, buildDynamicCastleRooms } from './CastleRoomsData';
+import { buildDynamicCastleRooms } from './CastleRoomsData';
 import { useClandestine } from '../../context/ClandestineContext';
 import { soundEngine } from '../../audio/AudioSynthesizer';
 import { 
@@ -16,29 +16,22 @@ import {
   Compass, 
   BookOpen, 
   MapPin, 
-  Flame, 
-  Volume2, 
-  Eye, 
-  Maximize2,
-  Lock,
-  Unlock,
-  Sparkles
+  Lock, 
+  Unlock
 } from 'lucide-react';
 
 export default function Full3DCastleEngine() {
   const containerRef = useRef(null);
   const { 
     cameraMode, 
-    travelTo, 
     ambientMode, 
-    toggleAmbientMode, 
     selectPostById,
     posts,
     categories,
     activeCategory 
   } = useClandestine();
 
-  const activeCastleRooms = React.useMemo(() => {
+  const activeCastleRooms = useMemo(() => {
     return buildDynamicCastleRooms(categories, posts);
   }, [categories, posts]);
 
@@ -63,10 +56,16 @@ export default function Full3DCastleEngine() {
   const [isPointerLocked, setIsPointerLocked] = useState(false);
 
   // References to dynamic Three.js objects
+  const sceneRef = useRef(null);
+  const castleWorldGroupRef = useRef(null);
+  const builtRoomIdsRef = useRef(new Set());
   const lightsRef = useRef({ ambient: null, dir: null, roomPoints: [], torchLights: [] });
   const lecternMeshes = useRef([]);
   const torchFlamesRef = useRef([]);
   const manaParticlesRef = useRef(null);
+  const materialsRef = useRef(null);
+  const makeCorridorRef = useRef(null);
+  const buildRoomGeometryRef = useRef(null);
   const prevCategoryRef = useRef(activeCategory);
 
   // Teleport player directly to a room
@@ -114,8 +113,13 @@ export default function Full3DCastleEngine() {
 
     // 1. Scene & Renderer Setup
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
     scene.background = new THREE.Color(0x04060d);
     scene.fog = new THREE.FogExp2(0x060914, 0.012);
+
+    const worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+    castleWorldGroupRef.current = worldGroup;
 
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -258,13 +262,294 @@ export default function Full3DCastleEngine() {
       metalness: 0.1
     });
 
+    const darkWoodMat = new THREE.MeshStandardMaterial({
+      color: 0x2b180d,
+      roughness: 0.75,
+      metalness: 0.15
+    });
+
+    materialsRef.current = {
+      stoneFloorMat,
+      gothicWallMat,
+      stainedGlassMat,
+      columnMat,
+      goldTrimMat,
+      runnerCarpetMat,
+      parchmentMat,
+      leatherMat,
+      darkWoodMat,
+      runeDaisTex
+    };
+
     lecternMeshes.current = [];
     lightsRef.current.roomPoints = [];
     lightsRef.current.torchLights = [];
     torchFlamesRef.current = [];
+    builtRoomIdsRef.current = new Set();
 
-    // 7. Construct 3D Castle Architecture (Including Dynamic Category Wings)
-    activeCastleRooms.forEach((room) => {
+    // --- Modular 3D Castle Props Builders ---
+
+    // 1. Brass Telescope on Tripod Stand
+    const buildTelescope = (targetGroup, tx, ty, tz) => {
+      const scopeGroup = new THREE.Group();
+      scopeGroup.position.set(tx, ty, tz);
+
+      // Tripod legs
+      const legGeo = new THREE.CylinderGeometry(0.035, 0.035, 1.45, 6);
+      for (let i = 0; i < 3; i++) {
+        const angle = (i * Math.PI * 2) / 3;
+        const leg = new THREE.Mesh(legGeo, goldTrimMat);
+        leg.position.set(Math.sin(angle) * 0.35, 0.7, Math.cos(angle) * 0.35);
+        leg.rotation.z = Math.cos(angle) * 0.28;
+        leg.rotation.x = -Math.sin(angle) * 0.28;
+        scopeGroup.add(leg);
+      }
+
+      // Center mount
+      const mount = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), goldTrimMat);
+      mount.position.y = 1.42;
+      scopeGroup.add(mount);
+
+      // Main telescope tube (angled up towards eclipse)
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.18, 2.1, 12), goldTrimMat);
+      tube.position.set(0, 1.7, -0.4);
+      tube.rotation.x = Math.PI / 3.4;
+      scopeGroup.add(tube);
+
+      // Glowing lens
+      const lens = new THREE.Mesh(
+        new THREE.CircleGeometry(0.16, 12),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide })
+      );
+      lens.position.set(0, 2.45, -1.25);
+      lens.rotation.x = -Math.PI / 6;
+      scopeGroup.add(lens);
+
+      targetGroup.add(scopeGroup);
+    };
+
+    // 2. Colossal Vaulted Chandelier with Candles
+    const buildChandelier = (targetGroup, cx, cy, cz) => {
+      const chanGroup = new THREE.Group();
+      chanGroup.position.set(cx, cy, cz);
+
+      // Suspension chain
+      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 7.5, 6), goldTrimMat);
+      chain.position.y = 3.75;
+      chanGroup.add(chain);
+
+      // Chandelier ring
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.08, 8, 24), goldTrimMat);
+      ring.rotation.x = Math.PI / 2;
+      chanGroup.add(ring);
+
+      // Candles around ring
+      const candleCount = 8;
+      for (let i = 0; i < candleCount; i++) {
+        const angle = (i * Math.PI * 2) / candleCount;
+        const kx = Math.sin(angle) * 2.4;
+        const kz = Math.cos(angle) * 2.4;
+
+        const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.28, 6), parchmentMat);
+        candle.position.set(kx, 0.14, kz);
+        chanGroup.add(candle);
+
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 6), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+        flame.position.set(kx, 0.35, kz);
+        chanGroup.add(flame);
+      }
+
+      // Warm chandelier light
+      const cLight = new THREE.PointLight(0xfef08a, 1.4, 28, 1.8);
+      cLight.position.set(0, 0.5, 0);
+      chanGroup.add(cLight);
+
+      targetGroup.add(chanGroup);
+    };
+
+    // 3. Ornate 3D Wooden Bookshelf with Multi-colored Books
+    const buildBookshelf = (targetGroup, bx, by, bz, rotY = 0) => {
+      const shelfGroup = new THREE.Group();
+      shelfGroup.position.set(bx, by, bz);
+      shelfGroup.rotation.y = rotY;
+
+      // Wooden Frame
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(4.2, 4.0, 0.7), darkWoodMat);
+      frame.position.y = 2.0;
+      shelfGroup.add(frame);
+
+      // 3 Shelves with books
+      const bookColors = [0x991b1b, 0x1e3a8a, 0x065f46, 0x854d0e, 0x581c87, 0x78350f];
+      for (let s = 0; s < 3; s++) {
+        const sy = 0.8 + s * 1.2;
+        for (let b = -1.6; b <= 1.6; b += 0.22) {
+          const color = bookColors[Math.floor(Math.random() * bookColors.length)];
+          const bMat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+          const bHeight = 0.65 + Math.random() * 0.35;
+          const book = new THREE.Mesh(new THREE.BoxGeometry(0.16, bHeight, 0.48), bMat);
+          book.position.set(b, sy + bHeight / 2, 0.05);
+          shelfGroup.add(book);
+        }
+      }
+
+      targetGroup.add(shelfGroup);
+    };
+
+    // 4. Study Writing Desk with Parchment Scroll & Quill
+    const buildStudyDesk = (targetGroup, dx, dy, dz, rotY = 0) => {
+      const deskGroup = new THREE.Group();
+      deskGroup.position.set(dx, dy, dz);
+      deskGroup.rotation.y = rotY;
+
+      // Desk tabletop
+      const top = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.1, 1.3), darkWoodMat);
+      top.position.y = 0.85;
+      deskGroup.add(top);
+
+      // Desk 4 legs
+      const legGeo = new THREE.CylinderGeometry(0.06, 0.07, 0.8, 8);
+      [[-1.15, -0.5], [1.15, -0.5], [-1.15, 0.5], [1.15, 0.5]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, columnMat);
+        leg.position.set(lx, 0.4, lz);
+        deskGroup.add(leg);
+      });
+
+      // Parchment scroll on desk
+      const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8), parchmentMat);
+      scroll.rotation.z = Math.PI / 2;
+      scroll.position.set(-0.5, 0.93, 0.1);
+      deskGroup.add(scroll);
+
+      // Inkwell and white quill feather
+      const inkwell = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.12, 8), columnMat);
+      inkwell.position.set(0.6, 0.94, 0.2);
+      deskGroup.add(inkwell);
+
+      const quill = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.035, 0.45, 6), parchmentMat);
+      quill.position.set(0.65, 1.1, 0.2);
+      quill.rotation.z = -0.35;
+      deskGroup.add(quill);
+
+      targetGroup.add(deskGroup);
+    };
+
+    // 5. Alchemist Chemistry Bench with Glowing Retorts and Flasks
+    const buildAlchemistBench = (targetGroup, ax, ay, az, rotY = 0) => {
+      const labGroup = new THREE.Group();
+      labGroup.position.set(ax, ay, az);
+      labGroup.rotation.y = rotY;
+
+      // Heavy wood workbench
+      const benchTop = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.12, 1.4), darkWoodMat);
+      benchTop.position.y = 0.88;
+      labGroup.add(benchTop);
+
+      const legGeo = new THREE.BoxGeometry(0.15, 0.82, 0.15);
+      [[-1.5, -0.55], [1.5, -0.55], [-1.5, 0.55], [1.5, 0.55]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, darkWoodMat);
+        leg.position.set(lx, 0.41, lz);
+        labGroup.add(leg);
+      });
+
+      // Glass distillation apparatus with glowing solutions
+      const liquids = [0x10b981, 0x06b6d4, 0xa855f7];
+      liquids.forEach((color, idx) => {
+        const flaskX = -0.8 + idx * 0.8;
+        const flaskBulb = new THREE.Mesh(
+          new THREE.SphereGeometry(0.2, 12, 12),
+          new THREE.MeshStandardMaterial({
+            color,
+            emissive: color,
+            emissiveIntensity: 0.65,
+            transparent: true,
+            opacity: 0.85
+          })
+        );
+        flaskBulb.position.set(flaskX, 1.12, 0);
+        labGroup.add(flaskBulb);
+
+        const flaskNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.28, 8), goldTrimMat);
+        flaskNeck.position.set(flaskX, 1.36, 0);
+        labGroup.add(flaskNeck);
+      });
+
+      // Distillation coiled tubing
+      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.03, 8, 20), goldTrimMat);
+      coil.position.set(0.4, 1.25, -0.2);
+      coil.rotation.x = Math.PI / 2;
+      labGroup.add(coil);
+
+      targetGroup.add(labGroup);
+    };
+
+    // 6. Knightly Heraldic Wall Shield with Crossed Swords
+    const buildHeraldicShield = (targetGroup, hx, hy, hz, rotY = 0) => {
+      const shieldGroup = new THREE.Group();
+      shieldGroup.position.set(hx, hy, hz);
+      shieldGroup.rotation.y = rotY;
+
+      // Crossed swords behind shield
+      const bladeGeo = new THREE.BoxGeometry(0.04, 1.6, 0.02);
+      const bladeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+
+      const sword1 = new THREE.Mesh(bladeGeo, bladeMat);
+      sword1.rotation.z = Math.PI / 4;
+      shieldGroup.add(sword1);
+
+      const sword2 = new THREE.Mesh(bladeGeo, bladeMat);
+      sword2.rotation.z = -Math.PI / 4;
+      shieldGroup.add(sword2);
+
+      // Heraldic Shield Plate
+      const shieldPlate = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.15, 0.08), goldTrimMat);
+      shieldPlate.position.z = 0.05;
+      shieldGroup.add(shieldPlate);
+
+      targetGroup.add(shieldGroup);
+    };
+
+    // 7. Hanging Fabric Banner
+    const buildHangingBanner = (targetGroup, hx, hy, hz, rotY = 0, accentColor = '#38bdf8') => {
+      const bannerGroup = new THREE.Group();
+      bannerGroup.position.set(hx, hy, hz);
+      bannerGroup.rotation.y = rotY;
+
+      // Brass horizontal rod
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.2, 8), goldTrimMat);
+      rod.rotation.z = Math.PI / 2;
+      rod.position.y = 2.0;
+      bannerGroup.add(rod);
+
+      // Hanging velvet tapestry
+      const bannerMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(accentColor),
+        roughness: 0.7,
+        side: THREE.DoubleSide
+      });
+      const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3.8), bannerMat);
+      cloth.position.set(0, 0, 0.02);
+      bannerGroup.add(cloth);
+
+      targetGroup.add(bannerGroup);
+    };
+
+    // --- Master 3D Room Builder ---
+    const buildRoomGeometry = (room, targetGroup) => {
+      const {
+        stoneFloorMat,
+        gothicWallMat,
+        stainedGlassMat,
+        columnMat,
+        goldTrimMat,
+        runnerCarpetMat,
+        parchmentMat,
+        leatherMat,
+        runeDaisTex
+      } = materialsRef.current;
+
+      const roomGroup = new THREE.Group();
+      roomGroup.name = `room-${room.id}`;
+
       // Room Floor
       const floorGeo = new THREE.PlaneGeometry(room.width, room.depth);
       const roomFloorMat = stoneFloorMat.clone();
@@ -272,14 +557,14 @@ export default function Full3DCastleEngine() {
       const floorMesh = new THREE.Mesh(floorGeo, roomFloorMat);
       floorMesh.rotation.x = -Math.PI / 2;
       floorMesh.position.set(room.x, 0, room.z);
-      scene.add(floorMesh);
+      roomGroup.add(floorMesh);
 
       // Central Room Carpet
       const carpetGeo = new THREE.PlaneGeometry(room.width * 0.4, room.depth * 0.7);
       const roomCarpet = new THREE.Mesh(carpetGeo, runnerCarpetMat);
       roomCarpet.rotation.x = -Math.PI / 2;
       roomCarpet.position.set(room.x, 0.015, room.z);
-      scene.add(roomCarpet);
+      roomGroup.add(roomCarpet);
 
       // Room Ceiling (omitted on open-air observatory terrace)
       if (!room.hasBalcony) {
@@ -287,7 +572,7 @@ export default function Full3DCastleEngine() {
         const ceilingMesh = new THREE.Mesh(ceilingGeo, gothicWallMat);
         ceilingMesh.rotation.x = Math.PI / 2;
         ceilingMesh.position.set(room.x, room.height, room.z);
-        scene.add(ceilingMesh);
+        roomGroup.add(ceilingMesh);
       }
 
       // Back Gothic Wall (Only for interior rooms; Balcony rooms have open horizon)
@@ -295,13 +580,13 @@ export default function Full3DCastleEngine() {
         const wallBackGeo = new THREE.PlaneGeometry(room.width, room.height);
         const wallBackMesh = new THREE.Mesh(wallBackGeo, gothicWallMat);
         wallBackMesh.position.set(room.x, room.height / 2, room.z - room.depth / 2);
-        scene.add(wallBackMesh);
+        roomGroup.add(wallBackMesh);
 
         // Stained Glass Window in Back Wall
         const windowGeo = new THREE.PlaneGeometry(6.5, 11);
         const windowMesh = new THREE.Mesh(windowGeo, stainedGlassMat);
         windowMesh.position.set(room.x, room.height / 2 + 0.8, room.z - room.depth / 2 + 0.1);
-        scene.add(windowMesh);
+        roomGroup.add(windowMesh);
 
         // Volumetric Light Shaft from the window
         const beamGeo = new THREE.ConeGeometry(4.5, 15, 16, 1, true);
@@ -315,13 +600,13 @@ export default function Full3DCastleEngine() {
         const beamMesh = new THREE.Mesh(beamGeo, beamMat);
         beamMesh.position.set(room.x, room.height / 2, room.z - room.depth / 2 + 6.5);
         beamMesh.rotation.x = Math.PI / 2.75;
-        scene.add(beamMesh);
+        roomGroup.add(beamMesh);
       } else {
         // Open Balcony Terrace with Stone Balustrade overlooking the Celestial Vista
         const railGeo = new THREE.BoxGeometry(room.width - 2, 0.25, 0.45);
         const railMesh = new THREE.Mesh(railGeo, goldTrimMat);
         railMesh.position.set(room.x, 1.15, room.z - room.depth / 2);
-        scene.add(railMesh);
+        roomGroup.add(railMesh);
 
         // Balusters
         const balusterCount = 16;
@@ -330,22 +615,21 @@ export default function Full3DCastleEngine() {
           const balGeo = new THREE.CylinderGeometry(0.09, 0.11, 1.05, 8);
           const balMesh = new THREE.Mesh(balGeo, columnMat);
           balMesh.position.set(bx, 0.55, room.z - room.depth / 2);
-          scene.add(balMesh);
+          roomGroup.add(balMesh);
         }
       }
 
       // Side Walls (Left and Right)
       const wallSideGeo = new THREE.PlaneGeometry(room.depth, room.height);
-      
       const wallLeft = new THREE.Mesh(wallSideGeo, gothicWallMat);
       wallLeft.position.set(room.x - room.width / 2, room.height / 2, room.z);
       wallLeft.rotation.y = Math.PI / 2;
-      scene.add(wallLeft);
+      roomGroup.add(wallLeft);
 
       const wallRight = new THREE.Mesh(wallSideGeo, gothicWallMat);
       wallRight.position.set(room.x + room.width / 2, room.height / 2, room.z);
       wallRight.rotation.y = -Math.PI / 2;
-      scene.add(wallRight);
+      roomGroup.add(wallRight);
 
       // 4 Perimeter Fluted Columns per room placed in corners
       const colRadius = 0.6;
@@ -362,25 +646,25 @@ export default function Full3DCastleEngine() {
       colCorners.forEach(([cx, cz], cIdx) => {
         const colMesh = new THREE.Mesh(colGeo, columnMat);
         colMesh.position.set(cx, room.height / 2, cz);
-        scene.add(colMesh);
+        roomGroup.add(colMesh);
 
         // Torch Bracket & Sconce
         const bracketGeo = new THREE.BoxGeometry(0.12, 0.12, 0.35);
         const bracketMesh = new THREE.Mesh(bracketGeo, goldTrimMat);
         bracketMesh.position.set(cx, 2.5, cz);
-        scene.add(bracketMesh);
+        roomGroup.add(bracketMesh);
 
         // Emissive Flame Core
         const flameGeo = new THREE.ConeGeometry(0.14, 0.38, 8);
         const flameMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
         const flameMesh = new THREE.Mesh(flameGeo, flameMat);
         flameMesh.position.set(cx, 2.75, cz);
-        scene.add(flameMesh);
+        roomGroup.add(flameMesh);
 
         // Warm Flickering Torch Point Light
         const torchLight = new THREE.PointLight(0xf59e0b, 0.85, 12, 1.8);
         torchLight.position.set(cx, 2.85, cz);
-        scene.add(torchLight);
+        roomGroup.add(torchLight);
 
         lightsRef.current.torchLights.push({ light: torchLight, baseIntensity: 0.85, offset: cIdx * 1.5 });
         torchFlamesRef.current.push(flameMesh);
@@ -389,11 +673,11 @@ export default function Full3DCastleEngine() {
       // Warm Room Center Light
       const pointLight = new THREE.PointLight(room.lightColor, room.lightIntensity, 24, 1.6);
       pointLight.position.set(room.x, 4.2, room.z);
-      scene.add(pointLight);
+      roomGroup.add(pointLight);
       lightsRef.current.roomPoints.push({ light: pointLight, baseIntensity: room.lightIntensity });
 
       // Physical 3D Lectern Pedestal holding the Book
-      const [px, py, pz] = room.pedestalPos;
+      const [px, , pz] = room.pedestalPos;
       
       // Glowing circular dais with animated magic rune circle under lectern
       const daisGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.12, 32);
@@ -407,40 +691,40 @@ export default function Full3DCastleEngine() {
       });
       const daisMesh = new THREE.Mesh(daisGeo, daisMat);
       daisMesh.position.set(px, 0.06, pz);
-      scene.add(daisMesh);
+      roomGroup.add(daisMesh);
 
       // Pedestal Base
       const pedBaseGeo = new THREE.CylinderGeometry(0.65, 0.9, 1.1, 10);
       const pedBase = new THREE.Mesh(pedBaseGeo, columnMat);
       pedBase.position.set(px, 0.55, pz);
-      scene.add(pedBase);
+      roomGroup.add(pedBase);
 
       // Angled Lectern Top
       const topGeo = new THREE.BoxGeometry(1.65, 0.12, 1.25);
       const pedTop = new THREE.Mesh(topGeo, goldTrimMat);
       pedTop.position.set(px, 1.15, pz);
       pedTop.rotation.x = 0.28;
-      scene.add(pedTop);
+      roomGroup.add(pedTop);
 
       // Open 3D Leatherbound Book on Lectern
       const bookCoverGeo = new THREE.BoxGeometry(1.32, 0.06, 0.98);
       const bookCover = new THREE.Mesh(bookCoverGeo, leatherMat);
       bookCover.position.set(px, 1.24, pz);
       bookCover.rotation.x = 0.28;
-      scene.add(bookCover);
+      roomGroup.add(bookCover);
 
       const bookPagesGeo = new THREE.BoxGeometry(1.26, 0.08, 0.92);
       const bookPages = new THREE.Mesh(bookPagesGeo, parchmentMat);
       bookPages.position.set(px, 1.27, pz);
       bookPages.rotation.x = 0.28;
-      scene.add(bookPages);
+      roomGroup.add(bookPages);
 
       // Floating Glowing Rune Orb above the Lectern
       const orbGeo = new THREE.SphereGeometry(0.2, 16, 16);
       const orbMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
       const orbMesh = new THREE.Mesh(orbGeo, orbMat);
       orbMesh.position.set(px, 1.88, pz);
-      scene.add(orbMesh);
+      roomGroup.add(orbMesh);
 
       lecternMeshes.current.push({
         roomId: room.id,
@@ -452,6 +736,44 @@ export default function Full3DCastleEngine() {
         orbMesh: orbMesh,
         daisMesh: daisMesh
       });
+
+      // --- Room Distinctive Props ---
+      if (room.id === 'observatory') {
+        buildTelescope(roomGroup, room.x, 0, room.z - 8.5);
+      } else if (room.id === 'cathedral') {
+        buildChandelier(roomGroup, room.x, 14, room.z);
+        buildHeraldicShield(roomGroup, room.x - halfW, 3.8, room.z, Math.PI / 2);
+        buildHeraldicShield(roomGroup, room.x + halfW, 3.8, room.z, -Math.PI / 2);
+        buildHangingBanner(roomGroup, room.x - room.width / 2 + 0.2, 6, room.z - 4, Math.PI / 2, '#EAB308');
+        buildHangingBanner(roomGroup, room.x + room.width / 2 - 0.2, 6, room.z - 4, -Math.PI / 2, '#EAB308');
+      } else if (room.id === 'alchemist') {
+        buildAlchemistBench(roomGroup, room.x - 5.5, 0, room.z, Math.PI / 2);
+        buildAlchemistBench(roomGroup, room.x + 5.5, 0, room.z, -Math.PI / 2);
+      } else if (room.id === 'library') {
+        buildBookshelf(roomGroup, room.x - 7.5, 0, room.z, Math.PI / 2);
+        buildBookshelf(roomGroup, room.x + 7.5, 0, room.z, -Math.PI / 2);
+        buildStudyDesk(roomGroup, room.x, 0, room.z + 5.5, 0);
+      } else if (room.id === 'scribe') {
+        buildStudyDesk(roomGroup, room.x - 4.5, 0, room.z, Math.PI / 2);
+        buildStudyDesk(roomGroup, room.x + 4.5, 0, room.z, -Math.PI / 2);
+        buildBookshelf(roomGroup, room.x, 0, room.z - room.depth / 2 + 1.2, 0);
+      } else if (room.id === 'arena' || room.id === 'crypts') {
+        buildHeraldicShield(roomGroup, room.x - halfW, 3.2, room.z, Math.PI / 2);
+        buildHeraldicShield(roomGroup, room.x + halfW, 3.2, room.z, -Math.PI / 2);
+      } else if (room.isDynamic) {
+        buildHangingBanner(roomGroup, room.x - room.width / 2 + 0.2, 4.5, room.z, Math.PI / 2, room.accentColor || '#38BDF8');
+        buildHangingBanner(roomGroup, room.x + room.width / 2 - 0.2, 4.5, room.z, -Math.PI / 2, room.accentColor || '#38BDF8');
+      }
+
+      targetGroup.add(roomGroup);
+    };
+
+    buildRoomGeometryRef.current = buildRoomGeometry;
+
+    // 7. Construct Initial 3D Castle Architecture
+    activeCastleRooms.forEach((room) => {
+      buildRoomGeometry(room, worldGroup);
+      builtRoomIdsRef.current.add(room.id);
     });
 
     // 8. Connective Corridors between Doorways (Zero Obstruction inside Rooms)
@@ -469,17 +791,17 @@ export default function Full3DCastleEngine() {
       cMesh.rotation.x = -Math.PI / 2;
       cMesh.rotation.z = -angle;
       cMesh.position.set((x1 + x2) / 2, 0.02, (z1 + z2) / 2);
-      scene.add(cMesh);
+      worldGroup.add(cMesh);
 
-      // Central Imperial Velvet Carpet Runner
+      // Central Velvet Carpet Runner
       const rGeo = new THREE.PlaneGeometry(width * 0.45, length);
       const rMesh = new THREE.Mesh(rGeo, runnerCarpetMat);
       rMesh.rotation.x = -Math.PI / 2;
       rMesh.rotation.z = -angle;
       rMesh.position.set((x1 + x2) / 2, 0.03, (z1 + z2) / 2);
-      scene.add(rMesh);
+      worldGroup.add(rMesh);
 
-      // Gothic Arched Portal Gateways at Entrance & Exit Doorways
+      // Arched Portal Gateways at Entrance & Exit Doorways
       [ [x1, z1], [x2, z2] ].forEach(([gx, gz]) => {
         const archPillarGeo = new THREE.CylinderGeometry(0.32, 0.38, 4.4, 10);
         const pLeft = new THREE.Mesh(archPillarGeo, columnMat);
@@ -490,29 +812,31 @@ export default function Full3DCastleEngine() {
 
         pLeft.position.set(gx + perpX, 2.2, gz + perpZ);
         pRight.position.set(gx - perpX, 2.2, gz - perpZ);
-        scene.add(pLeft, pRight);
+        worldGroup.add(pLeft, pRight);
 
         // Archway Crossbeam / Lintel
         const lintelGeo = new THREE.BoxGeometry(width + 0.8, 0.5, 0.6);
         const lintel = new THREE.Mesh(lintelGeo, goldTrimMat);
         lintel.position.set(gx, 4.4, gz);
         lintel.rotation.y = -angle + Math.PI / 2;
-        scene.add(lintel);
+        worldGroup.add(lintel);
 
         // Hanging Amber Lantern
         const lanternGeo = new THREE.BoxGeometry(0.28, 0.5, 0.28);
         const lanternMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
         const lantern = new THREE.Mesh(lanternGeo, lanternMat);
         lantern.position.set(gx, 3.8, gz);
-        scene.add(lantern);
+        worldGroup.add(lantern);
 
         const lanternLight = new THREE.PointLight(0xf59e0b, 0.65, 9, 2);
         lanternLight.position.set(gx, 3.7, gz);
-        scene.add(lanternLight);
+        worldGroup.add(lanternLight);
       });
     };
 
-    // Connect room doorways without encroaching on room centers
+    makeCorridorRef.current = makeCorridor;
+
+    // Connect standard room doorways without encroaching on room centers
     makeCorridor(0, 12, 0, 15);      // Observatory to Cathedral (South)
     makeCorridor(-12, 0, -20, 0);    // Observatory to Astrolabe (West)
     makeCorridor(12, 0, 19, 0);      // Observatory to Tech Vault (East)
@@ -538,7 +862,7 @@ export default function Full3DCastleEngine() {
     ring3.rotation.y = Math.PI / 4;
     astrolabeGroup.add(ring1, ring2, ring3);
     astrolabeGroup.position.set(-30, 4.8, 0);
-    scene.add(astrolabeGroup);
+    worldGroup.add(astrolabeGroup);
 
     // 10. Input Event Listeners
     const onKeyDown = (e) => {
@@ -797,6 +1121,37 @@ export default function Full3DCastleEngine() {
     };
   }, [cameraMode, posts, selectPostById]);
 
+  // Reactive Dynamic 3D Room Spawner:
+  // When arbitrary new categories are added, immediately spawn their 3D hall,
+  // lectern, and corridor in the running Three.js scene without page reload.
+  useEffect(() => {
+    if (!castleWorldGroupRef.current || !buildRoomGeometryRef.current || !makeCorridorRef.current) return;
+
+    activeCastleRooms.forEach((room) => {
+      if (!builtRoomIdsRef.current.has(room.id)) {
+        buildRoomGeometryRef.current(room, castleWorldGroupRef.current);
+        builtRoomIdsRef.current.add(room.id);
+
+        // Find nearest existing room to connect corridor
+        let nearest = activeCastleRooms[0];
+        let minDist = Infinity;
+        activeCastleRooms.forEach((other) => {
+          if (other.id !== room.id && builtRoomIdsRef.current.has(other.id)) {
+            const dist = Math.hypot(room.x - other.x, room.z - other.z);
+            if (dist < minDist) {
+              minDist = dist;
+              nearest = other;
+            }
+          }
+        });
+
+        if (nearest) {
+          makeCorridorRef.current(room.x, room.z, nearest.x, nearest.z);
+        }
+      }
+    });
+  }, [activeCastleRooms]);
+
   // Update Three.js lighting dynamically when ambientMode changes
   useEffect(() => {
     if (!lightsRef.current.ambient || !lightsRef.current.dir) return;
@@ -856,7 +1211,7 @@ export default function Full3DCastleEngine() {
               PRESS [E]
             </span>
             <BookOpen className="w-4 h-4 text-brightGold animate-bounce" />
-            <span>OPEN BOOK: "{nearbyBook.title}" ({nearbyBook.category})</span>
+            <span>READ POST: "{nearbyBook.title}" ({nearbyBook.category})</span>
           </button>
         </div>
       )}
@@ -871,7 +1226,7 @@ export default function Full3DCastleEngine() {
         <button
           onClick={() => setIsMiniMapOpen(!isMiniMapOpen)}
           className="bg-black/85 hover:bg-black px-3.5 py-2 rounded-xl border border-white/20 text-slate-300 hover:text-brightGold transition-colors cursor-pointer flex items-center gap-1.5 shadow-lg"
-          title="Toggle Castle Map (Key: M)"
+          title="Toggle Castle Directory (Key: M)"
         >
           <Compass className="w-3.5 h-3.5 text-brightGold" />
           <span>MAP [M]</span>
@@ -897,7 +1252,7 @@ export default function Full3DCastleEngine() {
           <span>•</span>
           <span>[Space] Jump</span>
           <span>•</span>
-          <span>[E] Read Book</span>
+          <span>[E] Read Post</span>
         </div>
       </div>
 
@@ -914,7 +1269,7 @@ export default function Full3DCastleEngine() {
               <div className="flex items-center space-x-2.5">
                 <Compass className="w-5 h-5 text-brightGold" />
                 <h3 className="text-base font-bold font-cinzel text-brightGold">
-                  IMPERIAL CASTLE MAP — 16 ROOMS
+                  CASTLE DIRECTORY — EXPLORE CATEGORIES
                 </h3>
               </div>
               <button 
@@ -948,7 +1303,7 @@ export default function Full3DCastleEngine() {
                   >
                     <div>
                       <div className="text-[10px] font-mono text-antiqueGold/80 uppercase">
-                        {room.category === 'all' ? 'SANCTUARY' : room.category}
+                        {room.category === 'all' ? 'CENTRAL HALL' : room.category}
                       </div>
                       <div className="text-xs font-bold font-cinzel mt-0.5 line-clamp-1">
                         {room.name}
@@ -965,7 +1320,7 @@ export default function Full3DCastleEngine() {
             </div>
 
             <div className="pt-3 mt-4 border-t border-white/10 flex items-center justify-between text-[11px] font-mono text-slate-400">
-              <span>Press <strong>[M]</strong> anytime to toggle castle map</span>
+              <span>Press <strong>[M]</strong> anytime to toggle directory</span>
               <button 
                 onClick={() => {
                   teleportToRoom(activeCastleRooms[0]);
@@ -973,7 +1328,7 @@ export default function Full3DCastleEngine() {
                 }}
                 className="text-antiqueGold hover:text-brightGold underline cursor-pointer"
               >
-                Return to Grand Observatory
+                Return to Observatory Terrace
               </button>
             </div>
           </div>

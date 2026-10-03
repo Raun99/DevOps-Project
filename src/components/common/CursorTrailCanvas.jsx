@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function CursorTrailCanvas() {
   const canvasRef = useRef(null);

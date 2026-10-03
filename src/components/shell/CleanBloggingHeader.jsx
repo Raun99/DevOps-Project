@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   BookOpen, 
   Search, 
@@ -10,7 +10,6 @@ import {
   ChevronDown, 
   Feather,
   LogOut,
-  Sparkles,
   Shield
 } from 'lucide-react';
 import { useClandestine } from '../../context/ClandestineContext';
@@ -95,8 +94,8 @@ export default function CleanBloggingHeader() {
             {isCategoryMenuOpen && (
               <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-2 rounded-2xl bg-black/95 border border-brightGold/50 shadow-2xl backdrop-blur-xl z-50">
                 <div className="text-[10px] font-mono text-slate-400 px-3 py-1 border-b border-white/10 uppercase flex justify-between">
-                  <span>Castle Wings</span>
-                  <span className="text-brightGold cursor-pointer" onClick={() => { setIsCategoryMenuOpen(false); openWritingDesk(); }}>+ New Wing</span>
+                  <span>Categories</span>
+                  <span className="text-brightGold cursor-pointer" onClick={() => { setIsCategoryMenuOpen(false); openWritingDesk(); }}>+ Create Category</span>
                 </div>
                 
                 <button
@@ -110,7 +109,7 @@ export default function CleanBloggingHeader() {
                       : 'text-slate-300 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  <span>All Castle Wings</span>
+                  <span>All Categories</span>
                   {activeCategory === 'all' && <span className="w-1.5 h-1.5 rounded-full bg-brightGold" />}
                 </button>
 
@@ -164,13 +163,13 @@ export default function CleanBloggingHeader() {
             <span>Search</span>
           </button>
 
-          {/* Scribe's Writing Desk (Create Post) */}
+          {/* Create Post Button */}
           <button
             onClick={() => openWritingDesk()}
-            className="px-3 py-1.5 rounded-full text-xs font-cinzel tracking-wider flex items-center gap-1.5 bg-gradient-to-r from-red-900/80 to-amber-700/80 hover:from-red-800 hover:to-amber-600 text-amber-100 font-bold border border-brightGold/40 transition-all cursor-pointer shadow"
+            className="px-3.5 py-1.5 rounded-full text-xs font-cinzel tracking-wider flex items-center gap-1.5 bg-gradient-to-r from-red-900/80 to-amber-700/80 hover:from-red-800 hover:to-amber-600 text-amber-100 font-bold border border-brightGold/40 transition-all cursor-pointer shadow"
           >
             <Feather className="w-3.5 h-3.5 text-brightGold" />
-            <span>Write</span>
+            <span>Create Post</span>
           </button>
 
         </nav>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   ChevronLeft, 
@@ -9,13 +9,10 @@ import {
   Send, 
   Clock, 
   Share2,
-  Calendar,
-  User,
-  Tag,
-  Edit3,
-  Trash2,
-  CornerDownRight,
-  AlertCircle
+  Edit3, 
+  Trash2, 
+  CornerDownRight, 
+  AlertCircle 
 } from 'lucide-react';
 import { useClandestine } from '../../context/ClandestineContext';
 import { soundEngine } from '../../audio/AudioSynthesizer';
@@ -166,7 +163,7 @@ export default function BookPageFlipModal() {
       setIsCommentBoxOpen(false);
       await fetchComments(currentPost.id);
     } catch (err) {
-      setModerationError(err.message || 'Failed to post marginal note.');
+      setModerationError(err.message || 'Failed to submit comment.');
     }
   };
 
@@ -187,7 +184,7 @@ export default function BookPageFlipModal() {
   };
 
   const handleDeletePost = async () => {
-    if (!window.confirm('Are you sure you want to expunge this manuscript from the imperial archives forever?')) return;
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
     try {
       await deletePost(currentPost.id);
     } catch (err) {
@@ -207,7 +204,7 @@ export default function BookPageFlipModal() {
               <span className="w-5 h-5 rounded-full bg-[#2a1a0f] text-amber-200 text-[10px] font-bold flex items-center justify-center font-mono">
                 {c.author_avatar || 'SC'}
               </span>
-              <span className="font-cinzel font-bold text-ink text-xs">{c.author_username || 'Scholar'}</span>
+              <span className="font-cinzel font-bold text-ink text-xs">{c.author_username || 'User'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-[10px] font-mono text-[#8c6742]">
@@ -217,9 +214,9 @@ export default function BookPageFlipModal() {
                 <button
                   onClick={() => handleDeleteComment(c.id)}
                   className="text-red-700 hover:text-red-900 text-[10px] font-mono hover:underline cursor-pointer"
-                  title="Expunge your marginal note"
+                  title="Delete your comment"
                 >
-                  Expunge
+                  Delete
                 </button>
               )}
             </div>
@@ -289,7 +286,7 @@ export default function BookPageFlipModal() {
                 <button
                   onClick={() => openWritingDesk(currentPost)}
                   className="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-500/50 text-xs font-cinzel font-bold flex items-center gap-1 cursor-pointer transition-all"
-                  title="Edit Manuscript"
+                  title="Edit Post"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Edit</span>
@@ -298,10 +295,10 @@ export default function BookPageFlipModal() {
                 <button
                   onClick={handleDeletePost}
                   className="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-500/50 text-xs font-cinzel font-bold flex items-center gap-1 cursor-pointer transition-all"
-                  title="Expunge Manuscript"
+                  title="Delete Post"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Expunge</span>
+                  <span>Delete</span>
                 </button>
               </>
             )}
@@ -327,7 +324,7 @@ export default function BookPageFlipModal() {
             <button 
               onClick={handleClose}
               className="px-3.5 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 text-white font-cinzel text-xs font-bold transition-all ml-3 flex items-center gap-1.5 cursor-pointer border border-red-500/50 shadow-md"
-              title="Close Book (Esc)"
+              title="Close Article (Esc)"
             >
               <X className="w-4 h-4" />
               <span>CLOSE</span>
@@ -488,12 +485,12 @@ export default function BookPageFlipModal() {
                 )}
               </div>
 
-              {/* Reader Comments (Marginal Notes) Section */}
+              {/* Reader Comments Section */}
               <div className="space-y-3 pt-3 border-t border-[#8c6742]/30">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-ink font-cinzel flex items-center gap-1.5">
                     <MessageSquare className="w-4 h-4 text-[#8c6742]" />
-                    <span>MARGINAL NOTES ({comments.length})</span>
+                    <span>COMMENTS ({comments.length})</span>
                   </span>
                   <button 
                     onClick={() => {
@@ -506,7 +503,7 @@ export default function BookPageFlipModal() {
                     }}
                     className="text-[11px] font-mono text-amber-900 font-bold hover:underline cursor-pointer"
                   >
-                    {isCommentBoxOpen ? 'Cancel' : '+ Write Note'}
+                    {isCommentBoxOpen ? 'Cancel' : '+ Write Comment'}
                   </button>
                 </div>
 
@@ -526,7 +523,7 @@ export default function BookPageFlipModal() {
                   <form onSubmit={handleCommentSubmit} className="p-3.5 bg-white/95 rounded-xl border border-[#8c6742]/40 space-y-2 shadow-md">
                     {replyingToId && (
                       <div className="text-[11px] font-mono text-amber-800 flex items-center justify-between">
-                        <span>Replying to note #{replyingToId.slice(-4)}</span>
+                        <span>Replying to comment #{replyingToId.slice(-4)}</span>
                         <button 
                           type="button" 
                           onClick={() => setReplyingToId(null)}
@@ -541,7 +538,7 @@ export default function BookPageFlipModal() {
                       required
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
-                      placeholder={currentUser ? `Inscribe marginal note as ${currentUser.username}...` : "Sign in to inscribe marginal note..."}
+                      placeholder={currentUser ? `Write a comment as ${currentUser.username}...` : "Sign in to write a comment..."}
                       className="w-full text-sm font-cormorant p-2.5 rounded bg-white border border-[#8c6742]/40 text-ink focus:outline-none"
                     />
                     <div className="flex justify-end">
@@ -550,7 +547,7 @@ export default function BookPageFlipModal() {
                         className="px-3.5 py-1.5 rounded-lg bg-[#2a1a0f] text-amber-200 text-xs font-cinzel font-bold hover:bg-[#402717] transition-colors flex items-center gap-1 cursor-pointer"
                       >
                         <Send className="w-3 h-3" />
-                        <span>Inscribe Note</span>
+                        <span>Post Comment</span>
                       </button>
                     </div>
                   </form>
@@ -559,10 +556,10 @@ export default function BookPageFlipModal() {
                 {/* Comments List */}
                 <div className="space-y-2.5 max-h-64 overflow-y-auto folio-scroll pr-1">
                   {commentsLoading ? (
-                    <div className="text-xs font-mono text-[#8c6742] text-center py-2">Consulting marginalia...</div>
+                    <div className="text-xs font-mono text-[#8c6742] text-center py-2">Loading comments...</div>
                   ) : comments.length === 0 ? (
                     <div className="text-xs font-cormorant italic text-[#8c6742] text-center py-2">
-                      No marginal notes inscribed on this codex yet. Be the first scholar to inscribe your thoughts.
+                      No comments on this post yet. Be the first to share your thoughts.
                     </div>
                   ) : (
                     comments.map(renderCommentNode)
@@ -579,7 +576,7 @@ export default function BookPageFlipModal() {
                 onClick={handleClose}
                 className="text-xs font-cinzel font-bold text-ink hover:text-red-800 cursor-pointer"
               >
-                « Close Book & Return to Castle
+                « Close Reader & Return to Castle
               </button>
             </div>
           </div>

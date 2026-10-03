@@ -68,15 +68,15 @@ class AudioSynthesizer {
         this.droneGain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 1.2);
         setTimeout(() => {
           if (this.droneOsc1) {
-            try { this.droneOsc1.stop(); } catch(e){}
+            try { this.droneOsc1.stop(); } catch {}
             this.droneOsc1 = null;
           }
           if (this.droneOsc2) {
-            try { this.droneOsc2.stop(); } catch(e){}
+            try { this.droneOsc2.stop(); } catch {}
             this.droneOsc2 = null;
           }
         }, 1300);
-      } catch (e) {}
+      } catch {}
     }
   }
 
@@ -99,7 +99,7 @@ class AudioSynthesizer {
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.18);
-    } catch (e) {}
+    } catch {}
   }
 
   // Crystalline mana / golden spark chime
@@ -121,7 +121,7 @@ class AudioSynthesizer {
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.38);
-    } catch (e) {}
+    } catch {}
   }
 
   // Wax seal stamp thud
@@ -143,7 +143,7 @@ class AudioSynthesizer {
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.24);
-    } catch (e) {}
+    } catch {}
   }
 
   // Secret cat gentle purr rumble
@@ -166,7 +166,7 @@ class AudioSynthesizer {
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.58);
-    } catch (e) {}
+    } catch {}
   }
 
   // Astrolabe mechanism brass click
@@ -197,7 +197,7 @@ class AudioSynthesizer {
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.5);
-    } catch (e) {}
+    } catch {}
   }
 
   playAstrolabeTick() {
@@ -218,7 +218,7 @@ class AudioSynthesizer {
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.05);
-    } catch (e) {}
+    } catch {}
   }
 }
 

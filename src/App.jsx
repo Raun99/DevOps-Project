@@ -1,4 +1,3 @@
-import React from 'react';
 import { ClandestineProvider } from './context/ClandestineContext';
 import Full3DCastleEngine from './components/world/Full3DCastleEngine';
 import CleanBloggingHeader from './components/shell/CleanBloggingHeader';

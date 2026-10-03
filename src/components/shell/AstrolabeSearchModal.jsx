@@ -1,8 +1,7 @@
 
-import React, { useRef, useEffect } from 'react';
-import { Search, X, BookOpen, User, Tag } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { Search, X } from 'lucide-react';
 import { useClandestine } from '../../context/ClandestineContext';
-import { soundEngine } from '../../audio/AudioSynthesizer';
 
 export default function AstrolabeSearchModal() {
   const { 
@@ -49,10 +48,10 @@ export default function AstrolabeSearchModal() {
 
         <div className="text-center mb-4">
           <h2 className="text-xl font-bold font-cinzel text-brightGold tracking-widest">
-            CELESTIAL ASTROLABE OF THE ARCHIVES
+            SEARCH POSTS & AUTHORS
           </h2>
           <p className="text-xs font-mono text-slate-400">
-            Rotate the celestial rings to locate any registered scroll, author, or discipline.
+            Search by title, topic, author, or keyword across all published posts.
           </p>
         </div>
 
@@ -64,7 +63,7 @@ export default function AstrolabeSearchModal() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Type any word, topic, author, or philosophy..."
+            placeholder="Search by title, topic, author, or keyword..."
             className="w-full bg-transparent text-sm font-cinzel text-amber-100 placeholder:text-slate-500 focus:outline-none tracking-wide"
           />
           {searchQuery && (
@@ -81,7 +80,7 @@ export default function AstrolabeSearchModal() {
         <div className="w-full max-h-60 overflow-y-auto folio-scroll space-y-2 pr-1">
           {filteredPosts.length === 0 ? (
             <div className="text-center py-6 text-slate-400 font-cormorant italic text-sm">
-              The astrolabe detects no echoes matching your inquiry.
+              No posts found matching your search.
             </div>
           ) : (
             filteredPosts.map((post) => (
@@ -107,7 +106,7 @@ export default function AstrolabeSearchModal() {
                 </div>
 
                 <div className="text-right flex-shrink-0 pl-3">
-                  <div className="text-xs font-mono text-candleAmber font-bold">{post.sparks} Sparks</div>
+                  <div className="text-xs font-mono text-candleAmber font-bold">{post.sparks} Likes</div>
                   <div className="text-[10px] font-mono text-slate-400">{post.author}</div>
                 </div>
               </div>
@@ -120,7 +119,7 @@ export default function AstrolabeSearchModal() {
           onClick={() => travelTo('chamber')}
           className="mt-5 px-6 py-2 rounded-xl bg-black/60 hover:bg-black/90 text-slate-300 hover:text-brightGold border border-antiqueGold/30 text-xs font-mono tracking-wider transition-all"
         >
-          Close Astrolabe
+          Close Search
         </button>
 
       </div>

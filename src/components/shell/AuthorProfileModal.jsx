@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X, User, BookOpen, Heart, Bookmark, Edit3, LogOut, Check, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, BookOpen, Heart, Edit3, LogOut } from 'lucide-react';
 import { useClandestine } from '../../context/ClandestineContext';
-import { soundEngine } from '../../audio/AudioSynthesizer';
 
 export default function AuthorProfileModal() {
   const { 
@@ -75,7 +74,7 @@ export default function AuthorProfileModal() {
                 )}
               </div>
               <p className="text-[11px] font-mono text-slate-400">
-                {author.role === 'archivist' ? 'Keeper of the Imperial Archives' : 'Registered Scholar'}
+                {author.role === 'archivist' ? 'Lead Editor' : 'Author'}
               </p>
             </div>
           </div>
@@ -106,7 +105,7 @@ export default function AuthorProfileModal() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Scholar Bio & Specialty</label>
+                  <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Bio</label>
                   <textarea 
                     rows={3}
                     value={editBio}
@@ -133,7 +132,7 @@ export default function AuthorProfileModal() {
             ) : (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Scholar Bio</span>
+                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">About</span>
                   {isOwnProfile && (
                     <button 
                       onClick={() => setIsEditing(true)}
@@ -145,7 +144,7 @@ export default function AuthorProfileModal() {
                   )}
                 </div>
                 <p className="font-cormorant italic text-base sm:text-lg text-amber-100/90 leading-relaxed">
-                  "{author.bio || 'Scholar of the Imperial Castle Archives.'}"
+                  "{author.bio || 'Author and community contributor.'}"
                 </p>
               </div>
             )}
@@ -155,7 +154,7 @@ export default function AuthorProfileModal() {
           <div className="grid grid-cols-3 gap-2">
             <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
               <div className="text-xl font-bold font-cinzel text-brightGold">{authoredPosts.length}</div>
-              <div className="text-[10px] font-mono text-slate-400 uppercase">Inscribed</div>
+              <div className="text-[10px] font-mono text-slate-400 uppercase">Posts</div>
             </div>
             <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
               <div className="text-xl font-bold font-cinzel text-brightGold">
@@ -167,20 +166,20 @@ export default function AuthorProfileModal() {
               <div className="text-xl font-bold font-cinzel text-brightGold">
                 {authoredPosts.reduce((acc, p) => acc + (p.sparks || 0), 0)}
               </div>
-              <div className="text-[10px] font-mono text-slate-400 uppercase">Resonance</div>
+              <div className="text-[10px] font-mono text-slate-400 uppercase">Likes</div>
             </div>
           </div>
 
-          {/* Authored Manuscripts List */}
+          {/* Authored Posts List */}
           <div>
             <h3 className="font-cinzel text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-brightGold" />
-              <span>Authored Manuscripts ({authoredPosts.length})</span>
+              <span>Published Posts ({authoredPosts.length})</span>
             </h3>
 
             {authoredPosts.length === 0 ? (
               <div className="p-6 rounded-2xl bg-black/40 border border-white/10 text-center font-cormorant italic text-slate-500">
-                No manuscripts inscribed under this scholar's name yet.
+                No posts published under this profile yet.
               </div>
             ) : (
               <div className="space-y-2">
@@ -227,14 +226,14 @@ export default function AuthorProfileModal() {
               className="text-xs font-cinzel text-red-400 hover:text-red-300 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sign Out of Archive</span>
+              <span>Sign Out</span>
             </button>
 
             <button
               onClick={closeProfileModal}
               className="px-4 py-1.5 rounded-xl bg-brightGold/20 hover:bg-brightGold/30 text-brightGold border border-brightGold/60 font-cinzel text-xs font-bold transition-all cursor-pointer"
             >
-              Return
+              Close
             </button>
           </div>
         )}

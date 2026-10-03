@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function ClandestineSigil({ className = "w-8 h-8", glowing = false }) {
   return (
     <div className={`relative inline-flex items-center justify-center ${className}`}>

@@ -12,7 +12,7 @@
     "migrate": "node server/db/migrate.js",
     "seed": "node server/db/seed.js",
     "test": "vitest run",
-    "lint": "eslint server/**/*.js"
+    "lint": "eslint --max-warnings=0 server/**/*.js src/**/*.{js,jsx}"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

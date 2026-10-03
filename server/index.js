@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
@@ -10,6 +12,10 @@ import runMigrations from './db/migrate.js';
 import { seedDatabase } from './db/seed.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, '../dist');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,28 +28,39 @@ app.use(cors({
 
 app.use(express.json());
 
+// Serve static frontend assets from Vite build in Docker / production
+app.use(express.static(distPath));
+
 // Healthcheck
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'CLANDESTINE Archive Core API',
+    service: 'CLANDESTINE API Service',
     time: new Date().toISOString(),
     canaryEnabled: true
   });
 });
 
-// Mount Routes
+// Mount API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 
+// SPA client-side routing fallback: serve index.html for any non-API GET routes
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    return res.sendFile(path.join(distPath, 'index.html'));
+  }
+  next();
+});
+
 // Error Handling Middleware
 app.use((err, req, res, _next) => {
   console.error('Unhandled Server Error:', err);
   res.status(500).json({
-    error: 'Internal server error in the archives.',
+    error: 'Internal server error.',
     details: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
@@ -57,7 +74,7 @@ async function startServer() {
 
     if (process.env.NODE_ENV !== 'test') {
       serverInstance = app.listen(PORT, () => {
-        console.log(`🏰 [CLANDESTINE API] Realm listening at http://localhost:${PORT}`);
+        console.log(`[CLANDESTINE API] Server listening at http://localhost:${PORT}`);
       });
     }
   } catch (err) {

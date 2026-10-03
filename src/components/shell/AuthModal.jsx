@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Lock, Mail, User, Shield, Sparkles, Feather } from 'lucide-react';
+import { useState } from 'react';
+import { X, Lock, Mail, User, Shield, Sparkles } from 'lucide-react';
 import { useClandestine } from '../../context/ClandestineContext';
 import { soundEngine } from '../../audio/AudioSynthesizer';
 
@@ -58,7 +58,7 @@ export default function AuthModal() {
           <div className="flex items-center space-x-2.5">
             <Shield className="w-5 h-5 text-brightGold" />
             <h2 className="font-cinzel text-base sm:text-lg font-bold text-white tracking-wider">
-              {tab === 'login' ? 'SCHOLAR SANCTUM LOGIN' : 'INSCRIBE INTO REGISTRY'}
+              {tab === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}
             </h2>
           </div>
           <button 
@@ -89,7 +89,7 @@ export default function AuthModal() {
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Register Scholar
+            Register
           </button>
         </div>
 
@@ -104,7 +104,7 @@ export default function AuthModal() {
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {tab === 'register' && (
             <div>
-              <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Scholar Name</label>
+              <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Username</label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                 <input 
@@ -112,7 +112,7 @@ export default function AuthModal() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. Master Corvus"
+                  placeholder="e.g. Elena Rostova"
                   className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/60 border border-white/15 text-slate-200 text-xs font-mono focus:border-brightGold/60 focus:outline-none"
                 />
               </div>
@@ -120,7 +120,7 @@ export default function AuthModal() {
           )}
 
           <div>
-            <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Email Archive Address</label>
+            <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Email Address</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
               <input 
@@ -128,14 +128,14 @@ export default function AuthModal() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="scholar@clandestine.internal"
+                placeholder="author@clandestine.internal"
                 className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/60 border border-white/15 text-slate-200 text-xs font-mono focus:border-brightGold/60 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Cipher Key / Password</label>
+            <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Password</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
               <input 
@@ -151,12 +151,12 @@ export default function AuthModal() {
 
           {tab === 'register' && (
             <div>
-              <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Scholar Bio / Title</label>
+              <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Bio</label>
               <input 
                 type="text"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Keeper of the East Archives"
+                placeholder="Writer, researcher, and avid reader"
                 className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-slate-200 text-xs font-mono focus:border-brightGold/60 focus:outline-none"
               />
             </div>
@@ -167,7 +167,7 @@ export default function AuthModal() {
             disabled={loading}
             className="w-full mt-2 py-2.5 rounded-xl bg-brightGold/20 hover:bg-brightGold/30 text-brightGold border border-brightGold/60 font-cinzel text-xs font-bold transition-all cursor-pointer shadow-lg disabled:opacity-50"
           >
-            {loading ? 'Consulting Archive...' : (tab === 'login' ? 'Enter Sanctuary' : 'Inscribe Registry')}
+            {loading ? 'Processing...' : (tab === 'login' ? 'Sign In' : 'Register')}
           </button>
         </form>
 
@@ -175,7 +175,7 @@ export default function AuthModal() {
         <div className="mt-5 pt-4 border-t border-white/10">
           <div className="text-[10px] font-mono text-slate-400 text-center uppercase tracking-wider mb-2 flex items-center justify-center gap-1">
             <Sparkles className="w-3 h-3 text-brightGold" />
-            <span>Demonstration Scholars (1-Click Login)</span>
+            <span>Demo Accounts (1-Click Login)</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -183,7 +183,7 @@ export default function AuthModal() {
               className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-cinzel text-slate-300 hover:text-brightGold transition-all cursor-pointer text-left"
             >
               <div className="font-bold">Sage Aris Thorne</div>
-              <div className="text-[9px] text-slate-500 font-mono">Observatory Chief</div>
+              <div className="text-[9px] text-slate-500 font-mono">Lead Writer</div>
             </button>
 
             <button
@@ -191,7 +191,7 @@ export default function AuthModal() {
               className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-cinzel text-slate-300 hover:text-brightGold transition-all cursor-pointer text-left"
             >
               <div className="font-bold">Lyra Vance</div>
-              <div className="text-[9px] text-slate-500 font-mono">Master Cartographer</div>
+              <div className="text-[9px] text-slate-500 font-mono">Contributing Author</div>
             </button>
           </div>
         </div>

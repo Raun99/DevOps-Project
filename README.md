@@ -6,15 +6,15 @@
 
 ## 🧭 Design Philosophy
 
-CLANDESTINE rejects flat SaaS templates and generic blogging cards. Instead, **the 3D fantasy environment itself IS the interface**:
+CLANDESTINE rejects flat SaaS templates and generic blogging cards. Instead, **the 3D dark-fantasy castle environment itself IS the interface**:
 
-- **Castle Rooms = Categories & Wings** (Astronomy Wing, Alchemy Chamber, Grand Cathedral, Forbidden Archives, Echoing Crypts, Scriptorium, and dynamically founded wings).
-- **Lectern Tomes = Blog Posts & Manuscripts** (Real articles stored in PostgreSQL and rendered on pedestals in 3D space).
-- **Writing Desk = Create / Edit Post** (Scribe desk with word counts, reading time calculation, tag management, and dynamic category creation).
-- **Marginal Notes = Threaded Comments** (Scholarly discussions with automated moderation and Canary rollout).
-- **Author's Chamber = User Profiles** (Avatar monograms, authored treatises, reader resonance likes, and saved bookmarks).
-- **Celestial Astrolabe = Dynamic Search** (Real-time full-text search across titles, contents, tags, and authors).
-- **First-Person Immersion** (WASD movement, mouse-look, jumping, footsteps, flickering candle sconces, floating mana motes, and an anime mouse trail).
+- **Castle Rooms = Category Halls** (Astronomy, Cathedral & Architecture, Science & Alchemy, Great Library, Literature & Writing, Historic Crypts, and dynamically created categories).
+- **Lecterns = Published Posts & Articles** (Real posts stored in PostgreSQL and rendered on 3D pedestals).
+- **Writing Desk = Create / Edit Post** (Post editor with word count, reading time calculation, tag management, and dynamic category creation).
+- **Book Reader = Post View & Comments** (Full-text reader with threaded comments, reply hierarchy, likes, bookmarks, and moderation).
+- **Profile Modal = User Profiles** (Avatar monograms, published posts, like counts, and saved bookmarks).
+- **Search Modal = Dynamic Full-Text Search** (Real-time search across titles, contents, tags, and authors).
+- **First-Person Exploration** (WASD movement, mouse-look, jumping, footsteps, candle lighting, floating particles, and cursor trail).
 
 ---
 
@@ -24,9 +24,9 @@ CLANDESTINE rejects flat SaaS templates and generic blogging cards. Instead, **t
 - **Backend**: Node.js, Express 5, JSON Web Tokens (JWT), bcrypt.js.
 - **Database**: PostgreSQL (via `pg.Pool`) with automated, zero-config in-memory fallback for local dev & testing without database prerequisites.
 - **Testing**: Vitest, Supertest (19 unit & integration tests covering auth, CRUD, ownership authorization, moderation, and canary routing).
-- **Linting**: ESLint 9+ with flat config.
+- **Linting**: ESLint 9+ with flat config (0 errors, 0 warnings quality gate across `server/` and `src/`).
 - **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`) running lint, migration, test, build, and pushing images to GitHub Container Registry (GHCR).
-- **Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml` orchestrating PostgreSQL and the Clandestine app.
+- **Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml` orchestrating PostgreSQL and the Clandestine app serving static frontend and API on port 5000.
 
 ---
 
@@ -66,7 +66,7 @@ CANARY_COMMENT_PERCENT=15
 # Run migrations (creates tables: users, categories, posts, comments, likes, bookmarks)
 npm run migrate
 
-# Seed demonstration accounts, 8 castle wings, and 4 real philosophical manuscripts
+# Seed demonstration accounts, categories, and published articles
 npm run seed
 ```
 
@@ -87,16 +87,16 @@ Visit **`http://localhost:5173`** in your browser to enter the castle!
 
 ---
 
-## 🔑 Demonstration Scholar Accounts
+## 🔑 Demonstration User Accounts
 
 Pre-seeded with real demonstration articles and comments:
 
-| Scholar Name | Role | Email | Password |
+| User Name | Role | Email | Password |
 |---|---|---|---|
-| **Sage Aris Thorne** | Observatory Chief | `aris@clandestine.internal` | `password123` |
-| **Lyra Vance** | Master Cartographer | `lyra@clandestine.internal` | `password123` |
+| **Sage Aris Thorne** | Author / Admin | `aris@clandestine.internal` | `password123` |
+| **Lyra Vance** | Author | `lyra@clandestine.internal` | `password123` |
 
-*(Tip: In the "Sign In" modal, 1-click quick login buttons are provided for instant testing!)*
+*(Tip: In the "Sign In" modal, 1-click demo login buttons are provided for instant testing!)*
 
 ---
 
@@ -105,10 +105,10 @@ Pre-seeded with real demonstration articles and comments:
 ### Unit & Integration Test Suite (`vitest` + `supertest`)
 Runs 19 automated tests verifying:
 - Comment Moderation Service (prohibited word detection, word boundaries, leetspeak evasion, script injection prevention, and scam link filtering)
-- Scholar registration, login, and JWT issuance
+- User registration, login, and JWT issuance
 - Post creation, retrieval, and filtering
-- **Backend Authorization Enforcement**: Prevents unauthorized scholars from editing or deleting other scholars' manuscripts (returns HTTP 403 Forbidden)
-- Comment inscription, threading, and deletion authorization
+- **Backend Authorization Enforcement**: Prevents unauthorized users from editing or deleting other users' posts (returns HTTP 403 Forbidden)
+- Comment submission, threading, and deletion authorization
 - Canary release header routing (`x-canary-channel: v2`)
 
 ```bash
@@ -135,7 +135,7 @@ docker-compose up --build
 ```
 This boots:
 1. `db`: PostgreSQL 16 Alpine with persistent volume and healthchecks.
-2. `app`: Clandestine production server with automated migrations and seed.
+2. `app`: Clandestine production server with automated migrations, seed, and static client serving.
 
 Access at **`http://localhost:5000`**.
 
@@ -168,7 +168,7 @@ The comment delivery pipeline features a lightweight Canary rollout mechanism (`
 1. **Percentage Bucketing**: Configured via `CANARY_COMMENT_PERCENT` (e.g. 15%). Users are deterministically hashed into Canary buckets.
 2. **Explicit Override**: Send the header `x-canary-channel: v2` or query parameter `?canary=true` to force Canary mode.
 3. **Payload Difference**:
-   - `v1-standard`: Flat marginalia comment list.
+   - `v1-standard`: Flat comment list.
    - `v2-canary`: Hierarchically nested comment tree with thread depth, reply routing, and metadata badges.
 
 ---
@@ -180,6 +180,6 @@ The comment delivery pipeline features a lightweight Canary rollout mechanism (`
 - **Left Click on Canvas**: Lock pointer for mouse-look
 - **Spacebar**: Jump
 - **Shift**: Sprint
-- **E**: Open and read book on nearby lectern
-- **M**: Toggle Castle Mini-Map & Fast Travel teleportation
-- **Esc**: Close open book / Return to first-person exploration
+- **E**: Open and read post on nearby lectern
+- **M**: Toggle Castle Directory & Fast Travel teleportation
+- **Esc**: Close open reader / Return to first-person exploration
