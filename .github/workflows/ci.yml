@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-and-verify:
-    name: Lint, Test & Build Verification
+    name: Lint, Test, Security & Build Verification
     runs-on: ubuntu-latest
 
     services:
@@ -55,6 +55,15 @@ jobs:
       - name: Verify Frontend Production Build
         run: npm run build
 
+      - name: Run Trivy Repository & Dependency Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
   container-build-and-push:
     name: Build & Push Container Image (GHCR)
     needs: test-and-verify
@@ -87,7 +96,7 @@ jobs:
             type=raw,value=latest
             type=sha,format=short
 
-      - name: Build and push Docker image
+      - name: Build and push Backend Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -97,3 +106,22 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Build and push Frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: ghcr.io/${{ github.repository }}-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Built Backend Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:latest
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'

@@ -12,7 +12,8 @@
     "migrate": "node server/db/migrate.js",
     "seed": "node server/db/seed.js",
     "test": "vitest run",
-    "lint": "eslint --max-warnings=0 server/**/*.js src/**/*.{js,jsx}"
+    "lint": "eslint --max-warnings=0 server/**/*.js src/**/*.{js,jsx}",
+    "security:trivy": "trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL ."
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
