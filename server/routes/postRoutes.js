@@ -2,6 +2,7 @@ import express from 'express';
 import { query } from '../db/index.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { recordPostCreated } from '../services/metrics.js';
+import { validatePostContent } from '../services/profanityService.js';
 
 const router = express.Router();
 const makeId = () => `post-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -105,6 +106,12 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Title must be at least 3 characters.' });
     }
 
+    // Genuine Profanity Filter check on post creation
+    const profanityCheck = validatePostContent({ title, subtitle, content });
+    if (!profanityCheck.valid) {
+      return res.status(400).json({ error: profanityCheck.error });
+    }
+
     const postId = makeId();
     const readingTime = calculateReadingTime(content);
     const postTags = Array.isArray(tags) ? tags : [];
@@ -158,6 +165,12 @@ router.put('/:id', requireAuth, async (req, res) => {
     // Authorization check: User can only edit their own post
     if (post.user_id !== req.user.id && req.user.role !== 'archivist') {
       return res.status(403).json({ error: 'Forbidden. You may only edit manuscripts that you have authored.' });
+    }
+
+    // Genuine Profanity Filter check on post editing
+    const profanityCheck = validatePostContent({ title, subtitle, content });
+    if (!profanityCheck.valid) {
+      return res.status(400).json({ error: profanityCheck.error });
     }
 
     const updatedTitle = title !== undefined ? title.trim() : post.title;
@@ -221,17 +234,40 @@ router.post('/:id/like', requireAuth, async (req, res) => {
     const postId = req.params.id;
     const userId = req.user.id;
 
-    // Check like exists
+    // Verify post exists
+    const postCheck = await query('SELECT id FROM posts WHERE id = $1', [postId]);
+    if (postCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Manuscript not found.' });
+    }
+
+    // Check if like exists
     const check = await query('SELECT * FROM likes WHERE user_id = $1 AND post_id = $2', [userId, postId]);
     const isLiked = check.rows.length > 0;
 
+    let liked = false;
     if (isLiked) {
       await query('DELETE FROM likes WHERE user_id = $1 AND post_id = $2', [userId, postId]);
-      res.json({ liked: false, message: 'Resonance removed.' });
+      liked = false;
     } else {
       await query('INSERT INTO likes (user_id, post_id) VALUES ($1, $2)', [userId, postId]);
-      res.json({ liked: true, message: 'Resonance bestowed.' });
+      liked = true;
     }
+
+    // Synchronize likes_count in posts table with actual likes count (never negative)
+    await query(
+      'UPDATE posts SET likes_count = (SELECT COUNT(*) FROM likes WHERE post_id = $1) WHERE id = $1',
+      [postId]
+    );
+
+    // Fetch updated like count
+    const updatedPost = await query('SELECT likes_count FROM posts WHERE id = $1', [postId]);
+    const likesCount = Number(updatedPost.rows[0]?.likes_count ?? 0);
+
+    res.json({
+      liked,
+      likes_count: likesCount,
+      message: liked ? 'Resonance bestowed.' : 'Resonance removed.'
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to toggle like.', details: err.message });
   }
