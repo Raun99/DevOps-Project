@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/name: clandestine
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: clandestine
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: clandestine
+    app.kubernetes.io/component: postgres

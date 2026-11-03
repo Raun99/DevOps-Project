@@ -1,0 +1,84 @@
+frontend:
+  replicaCount: 1
+  image:
+    repository: clandestine-frontend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 30080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+backend:
+  replicaCount: 1
+  image:
+    repository: clandestine-backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+postgres:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 5432
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+  database: clandestine_db
+  user: clandestine
+  password: secret_arcane_pass
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+config:
+  port: "5000"
+  nodeEnv: "production"
+  frontendUrl: "http://localhost"
+  canaryCommentPercent: "15"
+
+secrets:
+  jwtSecret: "clandestine-production-jwt-super-secret-key-3.0"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: clandestine.local
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+          port: 5000
+        - path: /
+          pathType: Prefix
+          service: frontend
+          port: 80
