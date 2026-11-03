@@ -10,6 +10,7 @@ import postRoutes from './routes/postRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
 import runMigrations from './db/migrate.js';
 import { seedDatabase } from './db/seed.js';
+import register, { metricsMiddleware } from './services/metrics.js';
 
 dotenv.config();
 
@@ -27,9 +28,20 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(metricsMiddleware);
 
 // Serve static frontend assets from Vite build in Docker / production
 app.use(express.static(distPath));
+
+// Prometheus Metrics Endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (err) {
+    res.status(500).end(err.message);
+  }
+});
 
 // Healthcheck
 app.get('/api/health', (req, res) => {
@@ -50,7 +62,7 @@ app.use('/api/comments', commentRoutes);
 
 // SPA client-side routing fallback: serve index.html for any non-API GET routes
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && req.path !== '/metrics') {
     return res.sendFile(path.join(distPath, 'index.html'));
   }
   next();

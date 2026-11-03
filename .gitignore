@@ -35,3 +35,13 @@ dist-ssr
 chrome_temp
 temp_profile
 shot_*.png
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

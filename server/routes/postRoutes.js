@@ -1,6 +1,7 @@
 import express from 'express';
 import { query } from '../db/index.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { recordPostCreated } from '../services/metrics.js';
 
 const router = express.Router();
 const makeId = () => `post-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -125,6 +126,8 @@ router.post('/', requireAuth, async (req, res) => {
       reading_time: readingTime,
       likes_count: 0
     };
+
+    recordPostCreated(catId);
 
     res.status(201).json({
       message: 'Manuscript inscribed into the archive.',

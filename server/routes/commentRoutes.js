@@ -3,6 +3,7 @@ import { query } from '../db/index.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { validateCommentContent } from '../services/moderationService.js';
 import { evaluateCanaryEligibility, formatCommentsPayload } from '../services/canaryService.js';
+import { recordCommentCreated } from '../services/metrics.js';
 
 const router = express.Router();
 const makeId = () => `comm-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -90,6 +91,8 @@ router.post('/post/:postId', requireAuth, async (req, res) => {
       author_username: req.user.username,
       author_avatar: req.user.avatar || 'SC'
     };
+
+    recordCommentCreated(Boolean(parent_id));
 
     res.status(201).json({
       message: 'Marginal note inscribed into the codex.',

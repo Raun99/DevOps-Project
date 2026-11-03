@@ -77,6 +77,46 @@ services:
     networks:
       - clandestine_net
 
+  # ============================================================================
+  # 4. Monitoring: Prometheus Metrics Collector (Optional Profile)
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: clandestine_prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - clandestine_net
+
+  # ============================================================================
+  # 5. Visualization: Grafana Dashboard with Auto-Provisioning (Optional Profile)
+  # ============================================================================
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: clandestine_grafana
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards/clandestine:ro
+    depends_on:
+      - prometheus
+    networks:
+      - clandestine_net
+
 volumes:
   postgres_data:
     driver: local

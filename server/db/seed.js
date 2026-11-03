@@ -9,21 +9,21 @@ export async function seedDatabase() {
   // 1. Seed Users
   const users = [
     {
-      id: 'user-aris',
-      username: 'Sage Aris Thorne',
-      email: 'aris@clandestine.internal',
+      id: 'user-persona',
+      username: 'Person A',
+      email: 'persona@clandestine.internal',
       password_hash: passwordHash,
-      avatar: 'AT',
-      bio: 'Grand Scholar of the Imperial Observatory and Keeper of the Celestial Codex.',
+      avatar: 'PA',
+      bio: 'Contributing author and researcher.',
       role: 'archivist'
     },
     {
-      id: 'user-lyra',
-      username: 'Lyra Vance',
-      email: 'lyra@clandestine.internal',
+      id: 'user-personb',
+      username: 'Person B',
+      email: 'personb@clandestine.internal',
       password_hash: passwordHash,
-      avatar: 'LV',
-      bio: 'Master Cartographer and Alchemist of the Subterranean Vaults.',
+      avatar: 'PB',
+      bio: 'Contributing author and researcher.',
       role: 'scholar'
     }
   ];
@@ -112,7 +112,7 @@ export async function seedDatabase() {
   const posts = [
     {
       id: 'post-vaults',
-      user_id: 'user-aris',
+      user_id: 'user-persona',
       category_id: 'cat-cathedral',
       title: 'The Architecture of Whispers: Acoustic Secrets of the Grand Vaults',
       subtitle: 'How medieval stone masonry captured and modulated spoken thoughts across centuries.',
@@ -124,7 +124,7 @@ This phenomenon was neither an accident nor an ornament. Medieval monastic build
     },
     {
       id: 'post-alchemy',
-      user_id: 'user-lyra',
+      user_id: 'user-personb',
       category_id: 'cat-alchemy',
       title: 'Transmuting Thought: Reflections on Modern Digital Arcana',
       subtitle: 'The parallels between ancient distillation of mercury and modern synthesis of ideas.',
@@ -136,7 +136,7 @@ When we examine the craft of writing and blogging today, we practice the exact s
     },
     {
       id: 'post-astronomy',
-      user_id: 'user-aris',
+      user_id: 'user-persona',
       category_id: 'cat-astronomy',
       title: 'Celestial Drift: Observations on Stellar Cartography and Isolation',
       subtitle: 'From the highest parapet, the stars do not offer answers; they demand better questions.',
@@ -148,7 +148,7 @@ Scholarship possesses a similar paradox. We work in solitary towers, surrounded 
     },
     {
       id: 'post-forbidden',
-      user_id: 'user-lyra',
+      user_id: 'user-personb',
       category_id: 'cat-forbidden',
       title: 'The Geometry of Forbidden Knowledge: Why Some Books Must Remain Closed',
       subtitle: 'An inquiry into cognitive hazard, intellectual humility, and the seal of caution.',
@@ -175,21 +175,21 @@ Some ideas cannot be understood safely without the prerequisite temperance to ho
     {
       id: 'comm-1',
       post_id: 'post-vaults',
-      user_id: 'user-lyra',
+      user_id: 'user-personb',
       content: 'The acoustic comparison is remarkable. Have you measured the reverberation decay in the northern crypts as well?',
       parent_id: null
     },
     {
       id: 'comm-2',
       post_id: 'post-vaults',
-      user_id: 'user-aris',
-      content: 'Indeed, Lyra. The decay lasts approximately 4.8 seconds, creating an overtone harmony with the eastern bells.',
+      user_id: 'user-persona',
+      content: 'Indeed, Person B. The decay lasts approximately 4.8 seconds, creating an overtone harmony with the eastern bells.',
       parent_id: 'comm-1'
     },
     {
       id: 'comm-3',
       post_id: 'post-alchemy',
-      user_id: 'user-aris',
+      user_id: 'user-persona',
       content: 'The tripartite division (nigredo, albedo, rubedo) fits the editing process of long-form manuscripts remarkably well.',
       parent_id: null
     }
