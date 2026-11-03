@@ -1,0 +1,3 @@
+# Trivy ignore file for CLANDESTINE
+# Suppress known non-production development dependencies if scanned
+CVE-2026-112942

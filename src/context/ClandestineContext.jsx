@@ -106,7 +106,7 @@ export function ClandestineProvider({ children }) {
             author: p.author_username || 'Archivist Scribe',
             authorAvatar: p.author_avatar || 'AS',
             authorBio: p.author_bio || '',
-            authorRole: p.user_id === 'user-aris' ? 'Chief Archivist' : 'Scholar Scribe',
+            authorRole: p.user_id === 'user-persona' ? 'Lead Author' : 'Contributing Author',
             readingTime: p.reading_time || '5 min read',
             sparks: p.likes_count || 0,
             tags: p.tags || [],

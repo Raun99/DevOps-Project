@@ -179,18 +179,18 @@ export default function AuthModal() {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => handleQuickLogin('aris@clandestine.internal', 'password123')}
+              onClick={() => handleQuickLogin('persona@clandestine.internal', 'password123')}
               className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-cinzel text-slate-300 hover:text-brightGold transition-all cursor-pointer text-left"
             >
-              <div className="font-bold">Sage Aris Thorne</div>
-              <div className="text-[9px] text-slate-500 font-mono">Lead Writer</div>
+              <div className="font-bold">Person A</div>
+              <div className="text-[9px] text-slate-500 font-mono">Lead Author</div>
             </button>
 
             <button
-              onClick={() => handleQuickLogin('lyra@clandestine.internal', 'password123')}
+              onClick={() => handleQuickLogin('personb@clandestine.internal', 'password123')}
               className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-cinzel text-slate-300 hover:text-brightGold transition-all cursor-pointer text-left"
             >
-              <div className="font-bold">Lyra Vance</div>
+              <div className="font-bold">Person B</div>
               <div className="text-[9px] text-slate-500 font-mono">Contributing Author</div>
             </button>
           </div>

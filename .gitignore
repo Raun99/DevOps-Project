@@ -25,12 +25,23 @@ dist-ssr
 
 # Environment Variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+
+# Local tools
+.tools/
 
 # Temporary capture files
 chrome_temp
 temp_profile
 shot_*.png
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

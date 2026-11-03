@@ -218,6 +218,17 @@ function simulateQuery(sqlText, params = []) {
 
   // UPDATE queries
   if (normalized.toUpperCase().startsWith('UPDATE')) {
+    if (normalized.includes('UPDATE posts SET likes_count')) {
+      const id = params[0];
+      const post = fallbackStore.posts.find(p => p.id === id);
+      if (post) {
+        const count = fallbackStore.likes.filter(l => l.post_id === id).length;
+        post.likes_count = count;
+        return { rows: [{ ...post, likes_count: count }], rowCount: 1 };
+      }
+      return { rows: [], rowCount: 0 };
+    }
+
     if (normalized.includes('UPDATE posts')) {
       // SET title = $1, subtitle = $2, content = $3, category_id = $4, tags = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6
       const [title, subtitle, content, category_id, tags, id] = params;

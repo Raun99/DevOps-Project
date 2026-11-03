@@ -1,5 +1,6 @@
 // CLANDESTINE Comment Moderation Service (Enhanced)
 // Analyzes marginal notes/comments for prohibited words, harassment, leetspeak evasion, and spam
+import { checkProfanity } from './profanityService.js';
 
 const PROHIBITED_WORDS = [
   'spam',
@@ -97,6 +98,15 @@ export function validateCommentContent(content) {
     return {
       allowed: false,
       reason: 'Script or executable markup detected. Comments may only contain plain scholarly prose.'
+    };
+  }
+
+  // 2. Check for genuine profanity and abusive terms
+  const profanityResult = checkProfanity(trimmed);
+  if (profanityResult.isProfane) {
+    return {
+      allowed: false,
+      reason: `Comment rejected: ${profanityResult.reason}`
     };
   }
 

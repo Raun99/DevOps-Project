@@ -93,8 +93,8 @@ Pre-seeded with real demonstration articles and comments:
 
 | User Name | Role | Email | Password |
 |---|---|---|---|
-| **Sage Aris Thorne** | Author / Admin | `aris@clandestine.internal` | `password123` |
-| **Lyra Vance** | Author | `lyra@clandestine.internal` | `password123` |
+| **Person A** | Author / Admin | `persona@clandestine.internal` | `password123` |
+| **Person B** | Author | `personb@clandestine.internal` | `password123` |
 
 *(Tip: In the "Sign In" modal, 1-click demo login buttons are provided for instant testing!)*
 

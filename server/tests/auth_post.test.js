@@ -4,50 +4,50 @@ import { app } from '../index.js';
 import { seedDatabase } from '../db/seed.js';
 
 describe('CLANDESTINE API Suite: Auth, Posts, Authorization & Comments', () => {
-  let arisToken = '';
-  let lyraToken = '';
+  let tokenA = '';
+  let tokenB = '';
   let testPostId = '';
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     await seedDatabase();
 
-    // Login as Sage Aris Thorne (seeded user)
-    const arisRes = await request(app)
+    // Login as Person A (seeded user)
+    const resA = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'aris@clandestine.internal', password: 'password123' });
-    expect(arisRes.status).toBe(200);
-    arisToken = arisRes.body.token;
+      .send({ email: 'persona@clandestine.internal', password: 'password123' });
+    expect(resA.status).toBe(200);
+    tokenA = resA.body.token;
 
-    // Login as Lyra Vance (seeded user)
-    const lyraRes = await request(app)
+    // Login as Person B (seeded user)
+    const resB = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'lyra@clandestine.internal', password: 'password123' });
-    expect(lyraRes.status).toBe(200);
-    lyraToken = lyraRes.body.token;
+      .send({ email: 'personb@clandestine.internal', password: 'password123' });
+    expect(resB.status).toBe(200);
+    tokenB = resB.body.token;
   });
 
   describe('Authentication & Profile', () => {
-    it('registers a new scholar successfully', async () => {
+    it('registers a new author successfully', async () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
-          username: 'Scholar Corvus',
-          email: 'corvus@clandestine.internal',
+          username: 'Person C',
+          email: 'personc@clandestine.internal',
           password: 'secretPassword456',
-          bio: 'Keeper of the Northern Gate.'
+          bio: 'Contributing researcher and writer.'
         });
       expect(res.status).toBe(201);
       expect(res.body.token).toBeDefined();
-      expect(res.body.user.username).toBe('Scholar Corvus');
+      expect(res.body.user.username).toBe('Person C');
     });
 
     it('rejects registration with duplicate email', async () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
-          username: 'Corvus Duplicate',
-          email: 'aris@clandestine.internal',
+          username: 'Person C Duplicate',
+          email: 'persona@clandestine.internal',
           password: 'password123'
         });
       expect(res.status).toBe(409);
@@ -56,9 +56,9 @@ describe('CLANDESTINE API Suite: Auth, Posts, Authorization & Comments', () => {
     it('retrieves authenticated profile via /api/auth/me', async () => {
       const res = await request(app)
         .get('/api/auth/me')
-        .set('Authorization', `Bearer ${arisToken}`);
+        .set('Authorization', `Bearer ${tokenA}`);
       expect(res.status).toBe(200);
-      expect(res.body.user.email).toBe('aris@clandestine.internal');
+      expect(res.body.user.email).toBe('persona@clandestine.internal');
     });
   });
 
@@ -76,7 +76,7 @@ describe('CLANDESTINE API Suite: Auth, Posts, Authorization & Comments', () => {
     it('allows authenticated scholar to publish a post', async () => {
       const res = await request(app)
         .post('/api/posts')
-        .set('Authorization', `Bearer ${arisToken}`)
+        .set('Authorization', `Bearer ${tokenA}`)
         .send({
           title: 'Chronicles of the High Spire',
           subtitle: 'A meditation on architectural vantage points.',
@@ -90,22 +90,22 @@ describe('CLANDESTINE API Suite: Auth, Posts, Authorization & Comments', () => {
       testPostId = res.body.post.id;
     });
 
-    it('enforces backend authorization: Lyra CANNOT edit Aris’s post', async () => {
+    it('enforces backend authorization: Person B CANNOT edit Person A’s post', async () => {
       const res = await request(app)
         .put(`/api/posts/${testPostId}`)
-        .set('Authorization', `Bearer ${lyraToken}`)
+        .set('Authorization', `Bearer ${tokenB}`)
         .send({
           title: 'Malicious Overwrite Attempt',
-          content: 'Lyra should not be permitted to modify Aris’s post.'
+          content: 'Person B should not be permitted to modify Person A’s post.'
         });
       expect(res.status).toBe(403);
       expect(res.body.error).toContain('Forbidden');
     });
 
-    it('allows author (Aris) to edit their own post', async () => {
+    it('allows author (Person A) to edit their own post', async () => {
       const res = await request(app)
         .put(`/api/posts/${testPostId}`)
-        .set('Authorization', `Bearer ${arisToken}`)
+        .set('Authorization', `Bearer ${tokenA}`)
         .send({
           title: 'Chronicles of the High Spire (Revised Edition)',
           subtitle: 'An expanded study on celestial acoustics.'
@@ -114,10 +114,10 @@ describe('CLANDESTINE API Suite: Auth, Posts, Authorization & Comments', () => {
       expect(res.body.post.title).toBe('Chronicles of the High Spire (Revised Edition)');
     });
 
-    it('enforces backend authorization: Lyra CANNOT delete Aris’s post', async () => {
+    it('enforces backend authorization: Person B CANNOT delete Person A’s post', async () => {
       const res = await request(app)
         .delete(`/api/posts/${testPostId}`)
-        .set('Authorization', `Bearer ${lyraToken}`);
+        .set('Authorization', `Bearer ${tokenB}`);
       expect(res.status).toBe(403);
     });
   });
@@ -126,7 +126,7 @@ describe('CLANDESTINE API Suite: Auth, Posts, Authorization & Comments', () => {
     it('blocks comment containing prohibited words via Moderation Service', async () => {
       const res = await request(app)
         .post(`/api/comments/post/${testPostId}`)
-        .set('Authorization', `Bearer ${lyraToken}`)
+        .set('Authorization', `Bearer ${tokenB}`)
         .send({
           content: 'This post is pure spam and should be expunged.'
         });
@@ -137,7 +137,7 @@ describe('CLANDESTINE API Suite: Auth, Posts, Authorization & Comments', () => {
     it('allows clean scholarly comment to be inscribed', async () => {
       const res = await request(app)
         .post(`/api/comments/post/${testPostId}`)
-        .set('Authorization', `Bearer ${lyraToken}`)
+        .set('Authorization', `Bearer ${tokenB}`)
         .send({
           content: 'A thoughtful perspective on the northern parapets. Have you accounted for wind velocity?'
         });

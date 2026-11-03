@@ -1,0 +1,9 @@
+apiVersion: v2
+name: clandestine
+description: A Helm chart for CLANDESTINE Social Blogging Platform
+type: application
+version: 1.0.0
+appVersion: "3.0.0"
+maintainers:
+  - name: Raun99
+    email: raun@clandestine.local
